@@ -5,7 +5,9 @@ print("Waiting for players")
 while wrapper.player_count() != 1:
   pass
   
+print ("Controller connected.  Main loop time")
+
 while True:
   input = wrapper.get_next_input()
   if (input != None):
-    print input
+    print ("Input processed: "+input[0]+" "+input[1])

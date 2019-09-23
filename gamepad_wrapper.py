@@ -22,12 +22,16 @@ def process_register_request(payload):
   print ("Responding to client "+payload+" with "+player_string)
   _client.publish(topic, player_string)
   
+  _player_list.append([payload,player_string])
 
 
-def process_player_command(payload):
+def process_player_command(player, payload):
   global _input_q
 
-  _input_q.append(message.payload)
+  print ("process player command")
+  print("added "+payload+" to "+player)
+
+  _input_q.append([player,payload])
 
 
 def on_message(client,userdata,message):
@@ -37,7 +41,8 @@ def on_message(client,userdata,message):
   if (message.topic == "register/request"):
     process_register_request(message.payload)
   else:
-    process_player_command(message.payload)
+    print "else clause"
+    process_player_command(message.topic,message.payload)
 
 class Gamepad_wrapper():
 

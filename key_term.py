@@ -97,10 +97,10 @@ while True:
 
   if key == 'i':
     client.publish(player,"up")
-    print "Up"
+    print "up"
   elif key == 'j':
     client.publish(player,"left")
-    print "Left"
+    print "left"
   elif key == 'k':
     client.publish(player,"down")
     print "down"
