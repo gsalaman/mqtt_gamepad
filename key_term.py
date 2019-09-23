@@ -9,6 +9,9 @@ import time
 
 import paho.mqtt.client as mqtt
 
+player = ""
+registration_complete = False
+
 ##################################
 # Non-blocking character read function.
 #################################
@@ -46,36 +49,63 @@ def print_cmds():
   print ("right: l")
   print ("q to quit")
  
+####################
+def on_message(client,userdata,message):
+  global registration_complete 
+  global player
+
+  # right now, the only message we've subscribed to is the registration
+  # response, so I don't need to check topic.
+
+  print("Message callback")
+
+  player = message.payload
+  registration_complete = True
+  
+
 ###
 # main code here...
 ###
 broker_address = "10.0.0.17"
 #broker_address = "makerlabPi1"
-client = mqtt.Client("key_term")
+client_name = "key_term"
+client = mqtt.Client(client_name)
 try:
   client.connect(broker_address)
 except:
   print "Unable to connect to MQTT broker"
   exit(0)
+client.loop_start()
+client.on_message=on_message
 
+# send the registration request
+subscribe_str = "register/"+client_name
+print("subscribing to "+subscribe_str)
+client.subscribe(subscribe_str)
+client.publish("register/request", client_name)
+
+# want this eventually to be a periodic try...but as of right now, the game 
+# needs to be running first.
+print("waiting for game...")
+while (registration_complete != True):
+  pass
+print("registration complete")
 
 print_cmds()
-player = "player1"
-
 while True:
   key = getch_noblock()
 
   if key == 'i':
-    client.publish(player+"/up", "1")
+    client.publish(player,"up")
     print "Up"
   elif key == 'j':
-    client.publish(player+"/left", "1")
+    client.publish(player,"left")
     print "Left"
   elif key == 'k':
-    client.publish(player+"/down", "1")
+    client.publish(player,"down")
     print "down"
   elif key == 'l':
-    client.publish(player+"/right", "1")
+    client.publish(player,"right")
     print "right"
   elif key == 'q':
     break;
