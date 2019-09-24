@@ -29,3 +29,13 @@ Then the game plays, using player1/player2 messages with directions as the playl
 | **playerX** | **direction** | Sent from the client associated with that player, with a text string for direction.  "up" "down" "left" and "right" currently implemented. |
 
 To read a message, I'll have a "get" function in the wrapper which will either return "None" if there's no message or the NEXT message.  That way, the game can decide to get & process all messages, or ignore until it gets to the last.  Can do blocking or non-blocking.
+
+The wrapper returns inputs as list items, where the first item in the list is the player identifier (eg player1), and the next is the input string (eg "up")
+
+The wrapper will store these messages for the application, and provides the following methods to retrieve inputs:
+| Method | Params | Return Value | Description |
+|---|---|---|---|
+| blocking_read | none | input list item | This will return the next input in the queue, waiting until there is a valid input.  It will remove that input from the queue, and then return that input. |
+| get_next_input | none | input list item or **None** | This is a non-blocking call.  If there is no input, it will return None...otherwise, it will return the input list item (with Player and Input string) |
+
+The API provides a mechanism to clear the entire queue of inputs:  empty_commands.
