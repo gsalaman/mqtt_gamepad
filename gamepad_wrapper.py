@@ -1,5 +1,4 @@
 import time
-
 import paho.mqtt.client as mqtt
 
 _input_q = []
@@ -73,6 +72,26 @@ class Gamepad_wrapper():
     else:
       return None
 
+  def blocking_read(self):
+    global _input_q
+ 
+    # wait until we have something in our queue
+    queue_length = len(_input_q)
+    while (queue_length == 0):
+      time.sleep(0.001)
+      queue_length = len(_input_q)
+  
+    # now read and return the next item.
+    input = _input_q[0]
+    del _input_q[0]
+    return input
+
   def player_count(self):
     global _player_list
     return len(_player_list) 
+  
+  def empty_commands(self):
+    global _input_q
+
+    del _input_q
+    _input_q = []
