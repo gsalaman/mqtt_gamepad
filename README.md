@@ -33,6 +33,7 @@ To read a message, I'll have a "get" function in the wrapper which will either r
 The wrapper returns inputs as list items, where the first item in the list is the player identifier (eg player1), and the next is the input string (eg "up")
 
 The wrapper will store these messages for the application, and provides the following methods to retrieve inputs:
+
 | Method | Params | Return Value | Description |
 |---|---|---|---|
 | blocking_read | none | input list item | This will return the next input in the queue, waiting until there is a valid input.  It will remove that input from the queue, and then return that input. |
