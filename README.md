@@ -9,7 +9,9 @@ The first step in registration is for the game app to tell the wrapper how many 
 
 Each gamepad is independent of "player"...which means we need a registration concept.  Each gamepad can send a "register" topic with it's client ID (assuming all client IDs are independent), and then the wrapper will respond back with a register/client id topic where "playerX" is the payload (X=1 for player1, 2 for player2, etc...).  Eventually I'll probably add a "register/release" message so the client can release "player1" to let a different client take it....but that's longer term.
  
-Messages used:  
+Messages used: 
+
+
 | Topic | Payload | Description |
 |-------|---------|-------------|
 | register/request | **client_name** | Sent by the input device to request a player identifer.  **client_name** is the string of the actual input device's MQTT client |
