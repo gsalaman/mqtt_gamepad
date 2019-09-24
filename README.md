@@ -24,4 +24,8 @@ Picture goes here.  :)
 ## Gamepad Inputs
 Then the game plays, using player1/player2 messages with directions as the playload.
 
+| Topic | Payload | Description |
+|-------|---------|-------------|
+| **playerX** | **direction** | Sent from the client associated with that player, with a text string for direction.  "up" "down" "left" and "right" currently implemented. |
+
 To read a message, I'll have a "get" function in the wrapper which will either return "None" if there's no message or the NEXT message.  That way, the game can decide to get & process all messages, or ignore until it gets to the last.  Can do blocking or non-blocking.
