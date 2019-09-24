@@ -84,36 +84,40 @@ print("subscribing to "+subscribe_str)
 client.subscribe(subscribe_str)
 client.publish("register/request", client_name)
 
-# want this eventually to be a periodic try...but as of right now, the game 
-# needs to be running first.
-print("waiting for game...")
-while (registration_complete != True):
+
+try:
+  # want this eventually to be a periodic try...but as of right now, the game 
+  # needs to be running first.
+  print("waiting for game...")
+  while (registration_complete != True):
+    pass
+  print("registration complete")
+
+  print_cmds()
+  while True:
+    key = getch_noblock()
+
+    if key == 'i':
+      client.publish(player,"up")
+      print "up"
+    elif key == 'j':
+      client.publish(player,"left")
+      print "left"
+    elif key == 'k':
+      client.publish(player,"down")
+      print "down"
+    elif key == 'l':
+      client.publish(player,"right")
+      print "right"
+    elif key == 'q':
+      break;
+    elif key == None:
+      continue;
+    else:  
+      print "unknown key: "+key
+      print_cmds()
+except KeyboardInterrupt:
   pass
-print("registration complete")
-
-print_cmds()
-while True:
-  key = getch_noblock()
-
-  if key == 'i':
-    client.publish(player,"up")
-    print "up"
-  elif key == 'j':
-    client.publish(player,"left")
-    print "left"
-  elif key == 'k':
-    client.publish(player,"down")
-    print "down"
-  elif key == 'l':
-    client.publish(player,"right")
-    print "right"
-  elif key == 'q':
-    break;
-  elif key == None:
-    continue;
-  else:  
-    print "unknown key: "+key
-    print_cmds()
 
 ###################################
 # Reset the terminal on exit
