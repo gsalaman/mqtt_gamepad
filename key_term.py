@@ -8,6 +8,7 @@ import termios, fcntl
 import time
 
 import paho.mqtt.client as mqtt
+from broker import read_broker
 
 player = ""
 registration_complete = False
@@ -26,6 +27,7 @@ def getch_noblock():
 #  Save the old terminal configuration, and
 #  tweak the terminal so that it doesn't echo, and doesn't block.
 ################################
+
 fd = sys.stdin.fileno()
 newattr = termios.tcgetattr(fd)
 
@@ -66,8 +68,7 @@ def on_message(client,userdata,message):
 ###
 # main code here...
 ###
-broker_address = "10.0.0.17"
-#broker_address = "makerlabPi1"
+broker_address = read_broker()
 client_name = "key_term"
 client = mqtt.Client(client_name)
 try:
