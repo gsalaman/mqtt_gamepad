@@ -209,6 +209,9 @@ def next_player_location(current_pos, dir):
 # play_game 
 ###################################
 def play_game():
+  global player1
+  global player2
+
   display_text("Get Ready",red, 3)
   display_text("3",red,1)
   display_text("2",red,1)
@@ -284,7 +287,7 @@ def play_game():
     else:
       collision[p1_new_pos[0]][p1_new_pos[1]] = 1
       player1 = p1_new_pos
-      matrix.SetImage(p1_image, p1_new_x, p1_new_y)
+      matrix.SetImage(p1_image, p1_new_pos[0], p1_new_pos[1])
 
     #figure out next spot for p2
     p2_new_pos = next_player_location(player2,p2_dir)
@@ -296,23 +299,23 @@ def play_game():
     else:
       collision[p2_new_pos[0]][p2_new_pos[1]] = 1
       player2 = p2_new_pos
-      matrix.SetImage(p2_image, p2_new_x, p2_new_y)
+      matrix.SetImage(p2_image, p2_new_pos[0], p2_new_pos[1])
 
     if (p1_crash & p2_crash):
       print "Tie game!!!"
-      show_crash(p1_new_x,p1_new_y)
+      show_crash(p1_new_pos[0],p1_new_pos[1])
       display_text("TIE!", red, 3)
       break;
 
     if (p1_crash):
       print "Player 2 wins!"
-      show_crash(p1_new_x,p1_new_y)
+      show_crash(p1_new_pos[0],p1_new_pos[1])
       display_text("Player 2\nWins!",blue,3)
       break;
 
     if (p2_crash):
       print "Player 1 wins!"
-      show_crash(p2_new_x,p2_new_y)
+      show_crash(p2_new_pos[0],p2_new_pos[1])
       display_text("Player 1\nWins!",green,3)
       break;
 
