@@ -56,18 +56,7 @@ blue = (0,0,255)
 
 wall_color = red 
 
-# start positions:  p1 at the top middle going down, p2 at bottom middle going up.
-p1_start_x = total_columns / 2
-p1_start_y = 5
-p2_start_x = p1_start_x
-p2_start_y = total_rows - p1_start_y
-
-player1 = [p1_start_x,p1_start_y]
-p1_color = green 
-
-player2 = [p2_start_x,p2_start_y]
-p2_color = blue 
-
+player_color = [green, blue] 
 
 # The collision matrix is a 2d matrix of our full playfield size.
 # Zero means there's nothing in that slot.
@@ -113,33 +102,6 @@ def init_walls():
   temp_draw.rectangle((0,0,total_columns-1,total_rows-1), outline=wall_color)
   matrix.SetImage(temp_image, 0,0)
 
-###################################
-# init_players
-###################################
-def init_players():
-  global collision
-  global p1_start_x
-  global p1_start_y
-  global p2_start_x
-  global p2_start_y
-  global p1_color
-  global p2_color
-  global player1
-  global player2
-
-  player1 = [p1_start_x,p1_start_y]
-  player2 = [p2_start_x,p2_start_y]
-
-  collision[p1_start_x][p1_start_y] = 1
-  collision[p2_start_x][p2_start_y] = 1
-
-  temp_image = Image.new("RGB", (1,1))
-  temp_draw = ImageDraw.Draw(temp_image)
-  temp_draw.rectangle((0,0,0,0), outline=p1_color, fill=p1_color)
-  matrix.SetImage(temp_image, p1_start_x, p1_start_y)
-  temp_draw.rectangle((0,0,0,0), outline=p2_color, fill=p2_color)
-  matrix.SetImage(temp_image, p2_start_x, p2_start_y)
-
 ####################################################
 # show_crash() 
 ####################################################
@@ -183,6 +145,7 @@ def apply_input(new_input, current_dir):
       return "right"
     else:
       return None
+
 ########################################
 # next_player_location
 ########################################   
@@ -208,9 +171,21 @@ def next_player_location(current_pos, dir):
 ###################################
 # play_game 
 ###################################
-def play_game():
-  global player1
-  global player2
+def play_game(num_players):
+  global total_rows
+  global total_columns
+  global collision
+  global matrix
+
+  # currently only support 2 players
+  if (num_players != 2):
+    print("num_players = "+str(num_players))
+    exit(1)
+
+  player_pos = [
+    [total_columns/2,5],
+    [total_columns/2,total_rows - 5] 
+  ]
 
   display_text("Get Ready",red, 3)
   display_text("3",red,1)
@@ -219,23 +194,31 @@ def play_game():
   display_text("GO!!!",red,1)
 
   reset_collision()
+
   init_walls()
-  init_players()
+
+  player_image = []
+  player_draw = []
+
+  for player_index in range(0,num_players): 
+    pos = player_pos[player_index]
+    collision[pos[0]][pos[1]] = 1
+  
+    color = player_color[player_index]
+
+    temp_image = Image.new("RGB", (1,1))
+    temp_draw = ImageDraw.Draw(temp_image)
+    temp_draw.rectangle((0,0,0,0), 
+                        outline=color,
+                        fill=color)
+    player_image.append(temp_image)
+    player_draw.append(temp_draw)
+    matrix.SetImage(temp_image, pos[0], pos[1])
+    
+  player_dir = ["down", "up"]
  
-  p1_dir = "down"
-  p2_dir = "up"
-
-  p1_image = Image.new("RGB", (1,1))
-  p1_draw = ImageDraw.Draw(p1_image)
-  p1_draw.rectangle((0,0,0,0), outline=p1_color, fill=p1_color)
-
-  p2_image = Image.new("RGB", (1,1))
-  p2_draw = ImageDraw.Draw(p2_image)
-  p2_draw.rectangle((0,0,0,0), outline=p2_color, fill=p2_color)
-
-  p1_crash = False
-  p2_crash = False
-
+  player_crashed = [False, False]
+ 
   last_update_time = datetime.now()
 
   while True:
@@ -244,24 +227,22 @@ def play_game():
     current_time = datetime.now()
     deltaT = current_time - last_update_time
 
-    # get the next input, checking for direction changes...but don't let that player
-    # back into themselves.
+    # get the next input, checking for direction changes...but don't let that 
+    # player back into themselves.
     input = wrapper.get_next_input()
     if input != None:
       if input[0] == "player1":
-        new_dir = apply_input(p1_dir, input[1])
-        if (new_dir != None):
-          p1_dir = input[1]
-          dir_pressed = True
+        index = 0
       elif input[0] == "player2":
-        new_dir = apply_input(p2_dir, input[1])
-        if (new_dir != None):
-          p2_dir = input[1]
-          dir_pressed = True
+        index = 1
       else:
         print("unexpected player input: ")
         print input[0]
         exit(1)
+      new_dir = apply_input(player_dir[index], input[1])
+      if (new_dir != None):
+        player_dir[index] = input[1]
+        dir_pressed = True
 
     # Should probably use positive logic here to update the current direciton,
     # but instead, I'm using the continue construct.
@@ -272,54 +253,46 @@ def play_game():
     last_update_time = current_time
 
     # The engine!
-    # If both p1 and p2 are going to hit something, it's a draw.
-    # If only p1 or p2 hits something, it's a win for the other one.
-    # if neither are going to hit anything, update the collision matrix 
-    # and add the new "dot"
+    # Figure out the new spots for all players
+    for index in range(0,num_players):
+      new_pos = next_player_location(player_pos[index], player_dir[index])
 
-    #figure out next spot for p1
-    p1_new_pos = next_player_location(player1,p1_dir)
+      # will the new spot cause a crash?
+      if (collision[new_pos[0]][new_pos[1]] == 1):
+        print("Player "+str(index+1)+" crashes!!!")
+        player_crashed[index] = True
+      else:
+        collision[new_pos[0]][new_pos[1]] = 1
+        player_pos[index] = new_pos
+        matrix.SetImage(player_image[index], new_pos[0], new_pos[1])
 
-    # will the new spot for p1 cause a crash?
-    if (collision[p1_new_pos[0]][p1_new_pos[1]] == 1):
-      print "Player 1 crashes!!!"
-      p1_crash = True
-    else:
-      collision[p1_new_pos[0]][p1_new_pos[1]] = 1
-      player1 = p1_new_pos
-      matrix.SetImage(p1_image, p1_new_pos[0], p1_new_pos[1])
+    # I think this needs to be a separate loop from above, as I want the crash
+    # checks to happen *AFTER* updating all players.  Better tie resolution?
+    # Confirm later...
+    crash_count = 0
+    for index in range(0, num_players):
+      if (player_crashed[index]):
+        crash_str = "Player "+str(index+1)+" crashes!!!"
+        show_crash(player_pos[index][0],player_pos[index][1])
+        crash_count += 1 
 
-    #figure out next spot for p2
-    p2_new_pos = next_player_location(player2,p2_dir)
-
-    # will the new spot for p1 cause a crash?
-    if (collision[p2_new_pos[0]][p2_new_pos[1]] == 1):
-      print "Player 2 crashes!!!"
-      p2_crash = True
-    else:
-      collision[p2_new_pos[0]][p2_new_pos[1]] = 1
-      player2 = p2_new_pos
-      matrix.SetImage(p2_image, p2_new_pos[0], p2_new_pos[1])
-
-    if (p1_crash & p2_crash):
-      print "Tie game!!!"
-      show_crash(p1_new_pos[0],p1_new_pos[1])
-      display_text("TIE!", red, 3)
-      break;
-
-    if (p1_crash):
-      print "Player 2 wins!"
-      show_crash(p1_new_pos[0],p1_new_pos[1])
-      display_text("Player 2\nWins!",blue,3)
-      break;
-
-    if (p2_crash):
-      print "Player 1 wins!"
-      show_crash(p2_new_pos[0],p2_new_pos[1])
-      display_text("Player 1\nWins!",green,3)
+    # If there's only one (or zero!) players left, we're done.
+    if ((num_players - crash_count) <= 1):
       break;
 
     time.sleep(speed_delay)
+  
+  # End of while loop.  
+  # Who was left standing?
+  for winner_index in range(0, num_players):
+    if (player_crashed[winner_index] == False):
+      winner_str="Player "+str(winner_index+1)+" WINS!!!"
+      display_text(winner_str, red, 3)
+      break;
+
+  if winner_index == num_players:
+    display_text("TIE GAME", red, 3)
+  
 
 ###################################
 # Main loop 
@@ -344,4 +317,4 @@ while True:
   display_text("Press Any\nButton to\nStart", green, 3)
   wrapper.blocking_read()
 
-  play_game()
+  play_game(2)
