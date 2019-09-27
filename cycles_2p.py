@@ -167,6 +167,44 @@ def display_text(my_text, text_color, delay):
     matrix.SetImage(temp_image,0,0)
     time.sleep(delay)
 
+########################################
+# apply_input
+########################################
+def apply_input(new_input, current_dir):
+
+    # check for direction changes, but don't let them back into themselves
+    if (new_input == "up") & (current_dir != "down"):
+      return "up" 
+    elif (new_input == "down") & (current_dir != "up"):
+      return "down" 
+    elif (new_input == "left") & (current_dir != "right"):
+      return "left" 
+    elif (new_input == "right") & (current_dir != "left"):
+      return "right"
+    else:
+      return None
+########################################
+# next_player_location
+########################################   
+def next_player_location(current_pos, dir)
+
+    # current_pos is a tuple of the current (x,y) position
+    new_x = current_pos[0]
+    new_y = current_pos[1]
+
+    #figure out next spot for that player 
+    if (dir == "up"):
+      new_y = new_y - 1
+    if (dir == "down"):
+      new_y = new_y + 1
+    if (dir == "left"):
+      new_x = new_x - 1
+    if (dir == "right"):
+      new_x = new_x + 1
+
+    # now return the new position as a tuple
+    return [new_x,new_y]
+
 ###################################
 # play_game 
 ###################################
@@ -203,47 +241,24 @@ def play_game():
     current_time = datetime.now()
     deltaT = current_time - last_update_time
 
-    # get the next input.
-    p1_input = None
-    p2_input = None
+    # get the next input, checking for direction changes...but don't let that player
+    # back into themselves.
     input = wrapper.get_next_input()
     if input != None:
       if input[0] == "player1":
-        p1_input = input[1]
+        new_dir = apply_input(p1_dir, input[1])
+        if (new_dir != None):
+          p1_dir = input[1]
+          dir_pressed = True
       elif input[0] == "player2":
-        p2_input = input[1]
+        new_dir = apply_input(p2_dir, input[1])
+        if (new_dir != None):
+          p2_dir = input[1]
+          dir_pressed = True
       else:
         print("unexpected player input: ")
         print input[0]
         exit(1)
-     
-    # check for player 1 dir changes, but don't let them back into themselves
-    if (p1_input == "up") & (p1_dir != "down"):
-      p1_dir = "up" 
-      dir_pressed = True
-    if (p1_input == "down") & (p1_dir != "up"):
-      p1_dir = "down" 
-      dir_pressed = True
-    if (p1_input == "left") & (p1_dir != "right"):
-      p1_dir = "left" 
-      dir_pressed = True
-    if (p1_input == "right") & (p1_dir != "left"):
-      p1_dir = "right" 
-      dir_pressed = True
-   
-    # check for player 2 dir changes, but don't let them back into themselves
-    if (p2_input == "up") & (p2_dir != "down"):
-      p2_dir = "up" 
-      dir_pressed = True
-    if (p2_input == "down") & (p2_dir != "up"):
-      p2_dir = "down" 
-      dir_pressed = True
-    if (p2_input == "left") & (p2_dir != "right"):
-      p2_dir = "left" 
-      dir_pressed = True
-    if (p2_input == "right") & (p2_dir != "left"):
-      p2_dir = "right" 
-      dir_pressed = True
 
     # Should probably use positive logic here to update the current direciton,
     # but instead, I'm using the continue construct.
@@ -260,47 +275,27 @@ def play_game():
     # and add the new "dot"
 
     #figure out next spot for p1
-    p1_new_x = player1[0]
-    p1_new_y = player1[1]
-    if (p1_dir == "up"):
-      p1_new_y = p1_new_y - 1
-    if (p1_dir == "down"):
-      p1_new_y = p1_new_y + 1
-    if (p1_dir == "left"):
-      p1_new_x = p1_new_x - 1
-    if (p1_dir == "right"):
-      p1_new_x = p1_new_x + 1
+    p1_new_pos = next_player_location(player1,p1_dir)
 
     # will the new spot for p1 cause a crash?
-    if (collision[p1_new_x][p1_new_y] == 1):
+    if (collision[p1_new_pos[0]][p1_new_pos[1]] == 1):
       print "Player 1 crashes!!!"
       p1_crash = True
     else:
-      collision[p1_new_x][p1_new_y] = 1
-      player1[0] = p1_new_x
-      player1[1] = p1_new_y
+      collision[p1_new_pos[0]][p1_new_pos[1]] = 1
+      player1 = p1_new_pos
       matrix.SetImage(p1_image, p1_new_x, p1_new_y)
 
     #figure out next spot for p2
-    p2_new_x = player2[0]
-    p2_new_y = player2[1]
-    if (p2_dir == "up"):
-      p2_new_y = p2_new_y - 1
-    if (p2_dir == "down"):
-      p2_new_y = p2_new_y + 1
-    if (p2_dir == "left"):
-      p2_new_x = p2_new_x - 1
-    if (p2_dir == "right"):
-      p2_new_x = p2_new_x + 1
+    p2_new_pos = next_player_location(player2,p2_dir)
 
-    # will the new spot for p2 cause a crash?
-    if (collision[p2_new_x][p2_new_y] == 1):
+    # will the new spot for p1 cause a crash?
+    if (collision[p2_new_pos[0]][p2_new_pos[1]] == 1):
       print "Player 2 crashes!!!"
       p2_crash = True
     else:
-      collision[p2_new_x][p2_new_y] = 1
-      player2[0] = p2_new_x
-      player2[1] = p2_new_y
+      collision[p2_new_pos[0]][p2_new_pos[1]] = 1
+      player2 = p2_new_pos
       matrix.SetImage(p2_image, p2_new_x, p2_new_y)
 
     if (p1_crash & p2_crash):
