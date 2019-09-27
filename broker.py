@@ -5,6 +5,7 @@ def read_broker():
    
     for line in file:
        # just get the first line
+       line = line.strip()
        return line
   except:
     # if no file exists, return localhost.
