@@ -1,7 +1,7 @@
 #################################################
 # cycles.py - tron style light cycle game
 #
-# Four player version!!! 
+# Two players (green and blue).
 # Input from MQTT wrapper 
 # Lose when you hit something.
 ################################################# 
@@ -35,7 +35,11 @@ options.rows = matrix_rows
 options.cols = matrix_columns 
 options.chain_length = matrix_horizontal
 options.parallel = matrix_vertical 
+
+#options.hardware_mapping = 'adafruit-hat-pwm' 
+#options.hardware_mapping = 'adafruit-hat'  # If you have an Adafruit HAT: 'adafruit-hat'
 options.hardware_mapping = 'regular'  
+
 options.gpio_slowdown = 2
 
 matrix = RGBMatrix(options = options)
@@ -49,12 +53,10 @@ black = (0,0,0)
 red = (255,0,0)
 green = (0,255,0)
 blue = (0,0,255)
-yellow = (0,255,255)
-purple = (255,0,255)
 
 wall_color = red 
 
-player_color = [green, blue, yellow, purple] 
+player_color = [green, blue] 
 
 # The collision matrix is a 2d matrix of our full playfield size.
 # Zero means there's nothing in that slot.
@@ -104,13 +106,18 @@ def init_walls():
 # show_crash() 
 ####################################################
 def show_crash(crash_x, crash_y):
-
-  crash_color = (255,255,255)
   
-  temp_image = Image.new("RGB", (1,1))
-  temp_draw = ImageDraw.Draw(temp_image)
-  temp_draw.rectangle((0,0,0,0), outline=crash_color, fill=crash_color)
-  matrix.SetImage(temp_image, crash_x,crash_y)
+  crash_color = (255,0,0)
+  crash_fill = (255,255,255)
+  for crashloop in range(3,13,2):
+    ellipse_offset = (crashloop-1)/2
+    temp_image = Image.new("RGB", (crashloop,crashloop))
+    temp_draw = ImageDraw.Draw(temp_image)
+    temp_draw.ellipse((0,0,crashloop-1,crashloop-1), outline=crash_color, fill=crash_fill)
+    matrix.SetImage(temp_image, crash_x-ellipse_offset,crash_y-ellipse_offset)
+    time.sleep(.15)
+
+  time.sleep(1)
 
 ###################################
 #  display_text()
@@ -170,16 +177,14 @@ def play_game(num_players):
   global collision
   global matrix
 
-  # this version is hardcoded to 4 players
-  if (num_players != 4):
+  # currently only support 2 players
+  if (num_players != 2):
     print("num_players = "+str(num_players))
     exit(1)
 
   player_pos = [
     [total_columns/2,5],
-    [total_columns/2,total_rows - 5], 
-    [5,total_rows/2],
-    [total_columns - 5, total_rows/2]
+    [total_columns/2,total_rows - 5] 
   ]
 
   display_text("Get Ready",red, 3)
@@ -210,9 +215,9 @@ def play_game(num_players):
     player_draw.append(temp_draw)
     matrix.SetImage(temp_image, pos[0], pos[1])
     
-  player_dir = ["down", "up", "right", "left"]
+  player_dir = ["down", "up"]
  
-  player_crashed = [False, False, False, False]
+  player_crashed = [False, False]
  
   last_update_time = datetime.now()
 
@@ -230,10 +235,6 @@ def play_game(num_players):
         index = 0
       elif input[0] == "player2":
         index = 1
-      elif input[0] == "player3":
-        index = 2
-      elif input[0] == "player4":
-        index = 3
       else:
         print("unexpected player input: ")
         print input[0]
@@ -254,17 +255,12 @@ def play_game(num_players):
     # The engine!
     # Figure out the new spots for all players
     for index in range(0,num_players):
-      # Don't update for crashed players
-      if (player_crashed[index]):
-        continue
-
       new_pos = next_player_location(player_pos[index], player_dir[index])
 
       # will the new spot cause a crash?
       if (collision[new_pos[0]][new_pos[1]] == 1):
         print("Player "+str(index+1)+" crashes!!!")
         player_crashed[index] = True
-        show_crash(player_pos[index][0],player_pos[index][1])
       else:
         collision[new_pos[0]][new_pos[1]] = 1
         player_pos[index] = new_pos
@@ -276,6 +272,8 @@ def play_game(num_players):
     crash_count = 0
     for index in range(0, num_players):
       if (player_crashed[index]):
+        crash_str = "Player "+str(index+1)+" crashes!!!"
+        show_crash(player_pos[index][0],player_pos[index][1])
         crash_count += 1 
 
     # If there's only one (or zero!) players left, we're done.
@@ -301,25 +299,17 @@ def play_game(num_players):
 ###################################
 
 # since this is the two player version, wait for 2 players to connect.
-display_text("Waiting for\nPlayer1\nPlayer2\nPlayer3\nPlayer4",red,0)
+display_text("Waiting for\nPlayer1\nPlayer2",red,0)
 wrapper = Gamepad_wrapper(2)
 while wrapper.player_count() == 0:
   # no display update needed...just suspend for a little
   time.sleep(0.001)
-display_text("Waiting for\nPlayer2\nPlayer3\nPlayer4",red,0)
+display_text("Waiting for\n\nPlayer2",red,0)
 while wrapper.player_count() == 1:
   # suspend again...
   time.sleep(0.001)
-display_text("Waiting for\nPlayer3\nPlayer4",red,0)
-while wrapper.player_count() == 2:
-  # suspend again...
-  time.sleep(0.001)
-display_text("Waiting for\nPlayer4",red,0)
-while wrapper.player_count() == 3:
-  # suspend again...
-  time.sleep(0.001)
 
-# now we should have 4 players connected.
+# now we should have 2 players connected.
 
 while True:
 
@@ -327,4 +317,4 @@ while True:
   display_text("Press Any\nButton to\nStart", green, 3)
   wrapper.blocking_read()
 
-  play_game(4)
+  play_game(2)
