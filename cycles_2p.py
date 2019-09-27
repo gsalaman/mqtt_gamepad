@@ -186,7 +186,7 @@ def apply_input(new_input, current_dir):
 ########################################
 # next_player_location
 ########################################   
-def next_player_location(current_pos, dir)
+def next_player_location(current_pos, dir):
 
     # current_pos is a tuple of the current (x,y) position
     new_x = current_pos[0]

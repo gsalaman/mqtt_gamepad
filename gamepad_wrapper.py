@@ -1,5 +1,6 @@
 import time
 import paho.mqtt.client as mqtt
+from broker import read_broker
 
 _input_q = []
 _player_list = []
@@ -51,7 +52,8 @@ class Gamepad_wrapper():
 
     self.expected_players = players
 
-    self.brokername = "10.0.0.17"
+    self.brokername = read_broker()
+ 
     _client.on_message=on_message
     try:
       _client.connect(self.brokername)
