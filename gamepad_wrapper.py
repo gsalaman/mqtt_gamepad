@@ -13,7 +13,7 @@ def process_register_request(payload):
   # First check:  Make sure that player's client isn't already registered.
   for player in _player_list:
     if (player[0] == payload):
-      print("Client "+payload+" already registered!!!)
+      print("Client "+payload+" already registered!!!")
       return
 
   player_count = len(_player_list) + 1
