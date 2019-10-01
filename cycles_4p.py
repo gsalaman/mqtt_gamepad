@@ -291,16 +291,43 @@ def play_game(num_players):
       winner_str="Player "+str(winner_index+1)+" WINS!!!"
       display_text(winner_str, red, 3)
       break;
-
-  if winner_index == num_players:
+  
+if winner_index == num_players:
     display_text("TIE GAME", red, 3)
+  
+class PlayerData():
+  def __init__(self, name, color):
+    self.player_name = name
+    self.player_color = color 
+    self.player_connected = False
+    self.player_ready = False
+    
+player_data_list = []
+for i in range(1,5):
+  name = "player"+str(i)
+  color = red
+  new_player = PlayerData(name, color)
+  player_data_list.append(new_player)
+  
+
+def check_all_ready():
+  global player_data_list
+
+  for player in 
+
+def setup_players():
+  global player_data_list
+
+  
+
   
 
 ###################################
 # Main loop 
 ###################################
 
-# since this is the two player version, wait for 2 players to connect.
+'''
+# wait for players to connect.
 display_text("Waiting for\nPlayer1\nPlayer2\nPlayer3\nPlayer4",red,0)
 wrapper = Gamepad_wrapper(2)
 while wrapper.player_count() == 0:
@@ -320,7 +347,7 @@ while wrapper.player_count() == 3:
   time.sleep(0.001)
 
 # now we should have 4 players connected.
-
+'''
 while True:
 
   # Wait to start until one of the two players hits a key
