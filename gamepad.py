@@ -59,7 +59,6 @@ def parse_ps3(event):
 #################################
 # parse_generic_usb 
 #   parses a single event and returns a string that represents that event.
-#  NEEDS TO BE UPDATED!!!
 #################################
 def parse_generic_usb(event):
 
@@ -104,17 +103,17 @@ def parse_generic_usb(event):
       # code 0 are x axis events
       if (event.code == 0):
         if event.value == 0:
-          return("D-left")
+          return("left")
         if event.value == 255:
-          return("D-right")
+          return("right")
         # ignoring the "return to center" value of 127.
 
       # code 1 are y axis events
       if (event.code == 1):
         if event.value == 0:
-          return("D-up")
+          return("up")
         if event.value == 255:
-          return("D-down")
+          return("down")
   
 ################################################
 # parse_event 
