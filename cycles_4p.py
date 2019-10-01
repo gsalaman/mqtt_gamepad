@@ -17,7 +17,7 @@ from gamepad_wrapper import Gamepad_wrapper
 # Graphics imports, constants and structures
 ###################################
 from rgbmatrix import RGBMatrix, RGBMatrixOptions
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 # this is the size of ONE of our matrixes. 
 matrix_rows = 64 
@@ -292,20 +292,20 @@ def play_game(num_players):
       display_text(winner_str, red, 3)
       break;
   
-if winner_index == num_players:
+  if winner_index == num_players:
     display_text("TIE GAME", red, 3)
   
 class PlayerData():
   def __init__(self, name, color):
-    self.player_name = name
-    self.player_color = color 
-    self.player_connected = False
-    self.player_ready = False
+    self.name = name
+    self.olor = color 
+    self.connected = False
+    self.ready = False
     
 player_data_list = []
 for i in range(1,5):
   name = "player"+str(i)
-  color = red
+  color = (255,0,0) 
   new_player = PlayerData(name, color)
   player_data_list.append(new_player)
   
@@ -313,15 +313,99 @@ for i in range(1,5):
 def check_all_ready():
   global player_data_list
 
-  for player in 
+  for player in player_data_list:
+    if player.ready == False:
+      return False
 
-def setup_players():
+  return True
+    
+
+def pregame():
   global player_data_list
+  global total_rows
+  global total_columns
+  global matrix
 
+  temp_image = Image.new("RGB", (total_columns,total_rows))
+  temp_draw = ImageDraw.Draw(temp_image)
+  fnt = ImageFont.truetype('Pillow/Tests/font/Courier_New_Bold.ttf', 10)
+  fnt_color = (255,0,0)
+  row_height = 14
+
+  # I only want to update our text on state changes...which means I need
+  # to keep track of the "old state" by player.
+  player_old_state = ["Disconnect", "Disconnect", "Disconnect", "Disconnect"]
+
+  for i in range(0,4):
+    tmp_str = "P"+str(i+1)+" DISCONNECTED"
+    temp_draw.text((0,i*row_height), 
+                   tmp_str, 
+                   fill=fnt_color, font=fnt)
+  matrix.SetImage(temp_image, 0,0)
+
+  while (check_all_ready() == False):
+    # start by updating which clients are connected.  
+    num_connected = wrapper.player_count()
   
+    for i in range(0,4):
+      if (player_data_list[i].ready == True):
+        if player_old_state[i] != "Ready":
+          state_str = " READY"
+          text_color = (0,255,0)
+          player_old_state[i] = "Ready"
+    
+          # Erase the old text
+          temp_draw.rectangle((0,i*row_height, total_columns, row_height*(i+1)),
+                              fill = (0,0,0)) 
+          
 
+          # put the new state text up.
+          temp_draw.text((0,i*row_height),
+                     "P"+str(i+1)+state_str, 
+                     fill = text_color, font=fnt)
+          matrix.SetImage(temp_image, 0,0)
+          
+
+          
+          
+      elif (i < num_connected):
+        if player_old_state[i] != "Connected":
+          player_data_list[i].connected = True
+          state_str = " NOT READY"
+          text_color = (0,0,255)
+          player_old_state[i] = "Connected"
+
+          # Erase the old text
+          temp_draw.rectangle((0,i*row_height, total_columns, row_height*(i+1)),
+                              fill = (0,0,0)) 
+          
+
+          # put the new state text up.
+          temp_draw.text((0,i*row_height),
+                     "P"+str(i+1)+state_str, 
+                     fill = text_color, font=fnt)
+          matrix.SetImage(temp_image, 0,0)
+
+      else:
+        # don't really need to print here
+        state_str = "DISCONNECTED"
+        text_color = (255,0,0)
+    
+    input = wrapper.get_next_input()
+    if input != None:
+      if input[0] == "player1":
+        player_data_list[0].ready = True
+      elif input[0] == "player2":
+        player_data_list[1].ready = True
+      elif input[0] == "player3":
+        player_data_list[2].ready = True
+      elif input[0] == "player4":
+        player_data_list[3].ready = True  
+      else:
+        print("unexpected player input: ")
+        print input[0]
+        exit(1)
   
-
 ###################################
 # Main loop 
 ###################################
@@ -348,10 +432,14 @@ while wrapper.player_count() == 3:
 
 # now we should have 4 players connected.
 '''
-while True:
 
-  # Wait to start until one of the two players hits a key
-  display_text("Press Any\nButton to\nStart", green, 3)
-  wrapper.blocking_read()
+wrapper = Gamepad_wrapper()
+while True:
+  pregame()
 
   play_game(4)
+
+  # at this point, we're going to make all players "not ready", but keep their
+  # MQTT connnections
+  for i in range(0,4):
+    player_data_list[i].ready = False

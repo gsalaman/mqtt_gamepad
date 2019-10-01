@@ -51,11 +51,9 @@ def on_message(client,userdata,message):
 
 class Gamepad_wrapper():
 
-  def __init__(self, players):
+  def __init__(self):
     global _client
  
-    self.expected_players = players
-
     self.brokername = read_broker()
  
     _client.on_message=on_message
