@@ -1,4 +1,4 @@
-#################################################
+################################################
 # cycles.py - tron style light cycle game
 #
 # Four player version!!! 
@@ -169,6 +169,8 @@ def play_game(num_players):
   global total_columns
   global collision
   global matrix
+  global player_data_list
+  
 
   # this version is hardcoded to 4 players
   if (num_players != 4):
@@ -213,6 +215,7 @@ def play_game(num_players):
   player_dir = ["down", "up", "right", "left"]
  
   player_crashed = [False, False, False, False]
+  player_place = []  
  
   last_update_time = datetime.now()
 
@@ -264,6 +267,7 @@ def play_game(num_players):
       if (collision[new_pos[0]][new_pos[1]] == 1):
         print("Player "+str(index+1)+" crashes!!!")
         player_crashed[index] = True
+        player_place.append(player_data_list[index].name_str) 
         show_crash(player_pos[index][0],player_pos[index][1])
       else:
         collision[new_pos[0]][new_pos[1]] = 1
@@ -288,17 +292,20 @@ def play_game(num_players):
   # Who was left standing?
   for winner_index in range(0, num_players):
     if (player_crashed[winner_index] == False):
-      winner_str="Player "+str(winner_index+1)+" WINS!!!"
+      #winner_str="Player "+str(winner_index+1)+" WINS!!!"
+      winner_str = "1st: "+player_data_list[winner_index].name_str
+      player_place.append(player_data_list[winner_index].name_str)
       display_text(winner_str, red, 3)
       break;
   
   if winner_index == num_players:
     display_text("TIE GAME", red, 3)
+
+  return player_place
   
 class PlayerData():
   def __init__(self, name, color, num):
     self.name_str = name
-    #self.name_list = list(name) 
     self.color = color 
     self.state = "Disconnect"
     self.player_name_size = 7
@@ -582,10 +589,19 @@ wrapper = Gamepad_wrapper()
 while True:
   pregame()
 
-  play_game(4)
+  places = play_game(4)
 
   # print out the winner
-  display_text("Game over!", (255,0,0), 5)
+  for player in places:
+    first = "1st: "+places[3]
+    second = "2nd: "+places[2]
+    third = "3rd: "+places[1]
+    fourth = "4th: "+places[0]
+  display_text(
+    first+"\n"+second+"\n"+third+"\n"+fourth,
+    green,
+    10)
+    
 
   # Wait a little, then go to high scores
 
