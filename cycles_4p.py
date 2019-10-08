@@ -292,10 +292,7 @@ def play_game(num_players):
   # Who was left standing?
   for winner_index in range(0, num_players):
     if (player_crashed[winner_index] == False):
-      #winner_str="Player "+str(winner_index+1)+" WINS!!!"
-      winner_str = "1st: "+player_data_list[winner_index].name_str
       player_place.append(player_data_list[winner_index].name_str)
-      display_text(winner_str, red, 3)
       break;
   
   if winner_index == num_players:
@@ -312,7 +309,13 @@ class PlayerData():
     self.ready_index = self.player_name_size
     self.char_index = 0
     self.row_height = 14
-    self.char_width = 7 
+    
+    # A note on character width:  we're using truetype fonts, which means
+    # the character can be drawn *BEFORE* the left-hand boundary.  To 
+    # combat this, we'll put in a "buffer zone" 
+    self.char_width =  9 
+    self.char_buffer = 2  
+
     self.player_number = num
     self.disconnect_color = (255,0,0)
     self.name_color = (0,0,255)
@@ -398,13 +401,14 @@ class PlayerData():
     regular_color = (0,255,0)
 
     # where is the top left corner of this character?
-    corner = (index * self.char_width, self.player_number*self.row_height)
+    corner = ( index * self.char_width,    
+               self.player_number*self.row_height)
 
     #start by blanking the space this character is going into
     player_data_draw.rectangle(
        (corner[0],
         corner[1],
-        corner[0]+self.char_width-2,  # not sure why this is -2 rather than -1
+        corner[0]+self.char_width-self.char_buffer,  
         corner[1]+self.row_height),
        fill = (0,0,0)) 
 
@@ -413,7 +417,9 @@ class PlayerData():
       color = highlight_color
     else:
       color = regular_color
-    player_data_draw.text(corner ,c, fill = color, font = player_data_font)
+    char_x = corner[0] + self.char_buffer
+    char_y = corner[1]
+    player_data_draw.text((char_x, char_y),c, fill = color, font = player_data_font)
     matrix.SetImage(player_data_image, 0, 0)
 
   def toggle_ready(self):
@@ -529,16 +535,6 @@ class PlayerData():
       self.show_char(new_char, self.char_index, True)
     
     
-player_data_list = []
-player_data_image = Image.new("RGB", (total_columns, total_rows))
-player_data_draw = ImageDraw.Draw(player_data_image)
-player_data_font = ImageFont.truetype('Pillow/Tests/font/Courier_New_Bold.ttf', 10)
-
-for i in range(0,4):
-  name = "PLAYER"+str(i+1)
-  color = (255,0,0) 
-  new_player = PlayerData(name, color, i)
-  player_data_list.append(new_player)
   
 
 def check_all_ready():
@@ -581,11 +577,26 @@ def pregame():
 
       player_data_list[player_index].process_input(input[1])
 
+    # Quick sleep to allow other threads to run
+    time.sleep(0.001)
+
 ###################################
 # Main loop 
 ###################################
 
 wrapper = Gamepad_wrapper()
+
+player_data_list = []
+player_data_image = Image.new("RGB", (total_columns, total_rows))
+player_data_draw = ImageDraw.Draw(player_data_image)
+player_data_font = ImageFont.truetype('Pillow/Tests/font/Courier_New_Bold.ttf', 10)
+
+for i in range(0,4):
+  name = "PLAYER"+str(i+1)
+  color = (255,0,0) 
+  new_player = PlayerData(name, color, i)
+  player_data_list.append(new_player)
+
 while True:
   pregame()
 
