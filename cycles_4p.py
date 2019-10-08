@@ -531,19 +531,6 @@ class PlayerData():
       new_char = self.name_str[self.char_index]
       self.show_char(new_char, self.char_index, True)
     
-    
-player_data_list = []
-player_data_image = Image.new("RGB", (total_columns, total_rows))
-player_data_draw = ImageDraw.Draw(player_data_image)
-# player_data_font = ImageFont.truetype('Pillow/Tests/font/Courier_New_Bold.ttf', 10)
-
-for i in range(0,4):
-  name = "PLAYER"+str(i+1)
-  color = (255,0,0) 
-  new_player = PlayerData(name, color, i)
-  player_data_list.append(new_player)
-  
-
 def check_all_ready():
   global player_data_list
 
@@ -583,12 +570,27 @@ def pregame():
       print "Processing "+input[1]+" for player index "+str(player_index)
 
       player_data_list[player_index].process_input(input[1])
+    
+    # going to try a quick sleep in here...want to see if this helps the 
+    # connect latency.
+    time.sleep(0.001)
 
 ###################################
 # Main loop 
 ###################################
 
 wrapper = Gamepad_wrapper()
+
+player_data_list = []
+player_data_image = Image.new("RGB", (total_columns, total_rows))
+player_data_draw = ImageDraw.Draw(player_data_image)
+
+for i in range(0,4):
+  name = "PLAYER"+str(i+1)
+  color = (255,0,0) 
+  new_player = PlayerData(name, color, i)
+  player_data_list.append(new_player)
+  
 while True:
   pregame()
 
