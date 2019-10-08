@@ -286,9 +286,8 @@ def play_game(num_players):
     if ((num_players - crash_count) <= 1):
       break;
 
-    time.sleep(speed_delay)
-  
   # End of while loop.  
+
   # Who was left standing?
   for winner_index in range(0, num_players):
     if (player_crashed[winner_index] == False):
