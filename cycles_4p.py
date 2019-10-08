@@ -311,14 +311,17 @@ class PlayerData():
     self.player_name_size = 7
     self.ready_index = self.player_name_size
     self.char_index = 0
-    self.row_height = 14
-    self.char_width = 7 
+    self.row_height = 10
+    self.char_width = 6 
     self.player_number = num
     self.disconnect_color = (255,0,0)
     self.name_color = (0,0,255)
     self.highlight_color = (255,0,0)
     
   def erase_line(self):
+    global player_data_draw
+    global matrix
+
     player_data_draw.rectangle((0,self.player_number*self.row_height, 
                          total_columns, self.row_height*(self.player_number+1)),
                          fill = (0,0,0)) 
@@ -328,13 +331,13 @@ class PlayerData():
     global matrix
     global player_data_image
     global player_data_draw
-    global player_data_font
+    #global player_data_font
 
     disc_color = (255,0,0)
     tmp_str = "P"+str(self.player_number + 1)+" DISCONNECTED"
     player_data_draw.text((0, self.player_number*self.row_height),
                    tmp_str,
-                   fill = disc_color, font = player_data_font)
+                   fill = disc_color)
     matrix.SetImage(player_data_image, 0, 0)
 
   def show_line(self):
@@ -385,14 +388,14 @@ class PlayerData():
        fill = (0,0,0)) 
 
     # and now write the ready (or not ready) string
-    player_data_draw.text(corner ,text, fill = color, font = player_data_font)
+    player_data_draw.text(corner ,text, fill = color)
     matrix.SetImage(player_data_image, 0, 0)
     
   def show_char(self, c, index, highlight):
     global matrix
     global player_data_image
     global player_data_draw
-    global player_data_font
+    #global player_data_font
     
     highlight_color = (255,255,255)
     regular_color = (0,255,0)
@@ -413,7 +416,7 @@ class PlayerData():
       color = highlight_color
     else:
       color = regular_color
-    player_data_draw.text(corner ,c, fill = color, font = player_data_font)
+    player_data_draw.text(corner ,c, fill = color)
     matrix.SetImage(player_data_image, 0, 0)
 
   def toggle_ready(self):
@@ -532,7 +535,7 @@ class PlayerData():
 player_data_list = []
 player_data_image = Image.new("RGB", (total_columns, total_rows))
 player_data_draw = ImageDraw.Draw(player_data_image)
-player_data_font = ImageFont.truetype('Pillow/Tests/font/Courier_New_Bold.ttf', 10)
+# player_data_font = ImageFont.truetype('Pillow/Tests/font/Courier_New_Bold.ttf', 10)
 
 for i in range(0,4):
   name = "PLAYER"+str(i+1)
