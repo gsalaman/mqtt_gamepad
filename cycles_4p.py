@@ -1,4 +1,4 @@
-#################################################
+################################################
 # cycles.py - tron style light cycle game
 #
 # Four player version!!! 
@@ -17,7 +17,7 @@ from gamepad_wrapper import Gamepad_wrapper
 # Graphics imports, constants and structures
 ###################################
 from rgbmatrix import RGBMatrix, RGBMatrixOptions
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 # this is the size of ONE of our matrixes. 
 matrix_rows = 64 
@@ -169,6 +169,8 @@ def play_game(num_players):
   global total_columns
   global collision
   global matrix
+  global player_data_list
+  
 
   # this version is hardcoded to 4 players
   if (num_players != 4):
@@ -213,6 +215,7 @@ def play_game(num_players):
   player_dir = ["down", "up", "right", "left"]
  
   player_crashed = [False, False, False, False]
+  player_place = []  
  
   last_update_time = datetime.now()
 
@@ -264,6 +267,7 @@ def play_game(num_players):
       if (collision[new_pos[0]][new_pos[1]] == 1):
         print("Player "+str(index+1)+" crashes!!!")
         player_crashed[index] = True
+        player_place.append(player_data_list[index].name_str) 
         show_crash(player_pos[index][0],player_pos[index][1])
       else:
         collision[new_pos[0]][new_pos[1]] = 1
@@ -288,43 +292,334 @@ def play_game(num_players):
   # Who was left standing?
   for winner_index in range(0, num_players):
     if (player_crashed[winner_index] == False):
-      winner_str="Player "+str(winner_index+1)+" WINS!!!"
-      display_text(winner_str, red, 3)
+      player_place.append(player_data_list[winner_index].name_str)
       break;
-
+  
   if winner_index == num_players:
     display_text("TIE GAME", red, 3)
+
+  return player_place
   
+class PlayerData():
+  def __init__(self, name, color, num):
+    self.name_str = name
+    self.color = color 
+    self.state = "Disconnect"
+    self.player_name_size = 7
+    self.ready_index = self.player_name_size
+    self.char_index = 0
+    self.row_height = 14
+    
+    # A note on character width:  we're using truetype fonts, which means
+    # the character can be drawn *BEFORE* the left-hand boundary.  To 
+    # combat this, we'll put in a "buffer zone" 
+    self.char_width =  9 
+    self.char_buffer = 2  
+
+    self.player_number = num
+    self.disconnect_color = (255,0,0)
+    self.name_color = (0,0,255)
+    self.highlight_color = (255,0,0)
+    
+  def erase_line(self):
+    player_data_draw.rectangle((0,self.player_number*self.row_height, 
+                         total_columns, self.row_height*(self.player_number+1)),
+                         fill = (0,0,0)) 
+    matrix.SetImage(player_data_image, 0, 0)
+
+  def show_disconnect(self):
+    global matrix
+    global player_data_image
+    global player_data_draw
+    global player_data_font
+
+    disc_color = (255,0,0)
+    tmp_str = "P"+str(self.player_number + 1)+" DISCONNECTED"
+    player_data_draw.text((0, self.player_number*self.row_height),
+                   tmp_str,
+                   fill = disc_color, font = player_data_font)
+    matrix.SetImage(player_data_image, 0, 0)
+
+  def show_line(self):
+    self.erase_line()
+    index = 0
+    for c in self.name_str:
+      self.show_char(c, index,(index == self.char_index)) 
+      index += 1
+    self.show_ready()
+
+  def set_connected(self):
+    self.state = "Input"
+    self.show_line()
+
+  def show_color(self):
+    #coming soon
+    pass
+  
+  def show_ready(self):
+    # for now, start ready 2 chars after the player name.
+    #ready_start_column = self.char_width * (self.player_name_size + 2) 
+    ready_start_column = self.char_width * (self.player_name_size) 
+
+    # start by setting the text string to either ready or not.
+    if (self.state == "Ready"):
+      text = " READY"
+    else:
+      text = "!READY"
+
+    # if our cursor is on the ready indicator, make the text white
+    if (self.char_index == self.ready_index):
+      color = (255,255,255)
+    elif (self.state == "Ready"):
+      color = (0,255,0)
+    else:
+      color = (255,0,0)
+
+    # where is the top left corner of this string?
+    corner = (ready_start_column, 
+              self.player_number*self.row_height)
+
+    #start by blanking the space this string is going into
+    player_data_draw.rectangle(
+       (corner[0],
+        corner[1],
+        corner[0]+(self.char_width*len(text)),
+        corner[1]+self.row_height),
+       fill = (0,0,0)) 
+
+    # and now write the ready (or not ready) string
+    player_data_draw.text(corner ,text, fill = color, font = player_data_font)
+    matrix.SetImage(player_data_image, 0, 0)
+    
+  def show_char(self, c, index, highlight):
+    global matrix
+    global player_data_image
+    global player_data_draw
+    global player_data_font
+    
+    highlight_color = (255,255,255)
+    regular_color = (0,255,0)
+
+    # where is the top left corner of this character?
+    corner = ( index * self.char_width,    
+               self.player_number*self.row_height)
+
+    #start by blanking the space this character is going into
+    player_data_draw.rectangle(
+       (corner[0],
+        corner[1],
+        corner[0]+self.char_width-self.char_buffer,  
+        corner[1]+self.row_height),
+       fill = (0,0,0)) 
+
+    # now print the character
+    if (highlight == True):
+      color = highlight_color
+    else:
+      color = regular_color
+    char_x = corner[0] + self.char_buffer
+    char_y = corner[1]
+    player_data_draw.text((char_x, char_y),c, fill = color, font = player_data_font)
+    matrix.SetImage(player_data_image, 0, 0)
+
+  def toggle_ready(self):
+    if self.state == "Ready":
+      self.state = "Input"
+    elif self.state == "Input":
+      self.state = "Ready"
+    else:
+      print("Unexpected state in toggle_ready: ")
+      print(self.state)
+      exit(1)
+    self.show_ready()
+
+  def process_input(self, input):
+   
+    # an up backs up our current char. A goes to space, goes to 9-0, goes to Z
+    if input == "up":
+      # are we on the "ready" indicator?
+      if (self.char_index == self.ready_index):
+        self.toggle_ready()
+        
+      # we're somewhere in the string.  tweak that char.
+      else:
+        old_char = self.name_str[self.char_index]
+
+        if (old_char == "A"):
+          new_char = " "
+        elif (old_char == " "):
+          new_char = "9"
+        elif (old_char == "0"): 
+          new_char = "Z"
+        else:
+          new_char = chr(ord(old_char) - 1)
+      
+        self.show_char(new_char, self.char_index, True)
+       
+        # update our data.
+        # unfortunately, strings don't allow for character assignment, so 
+        # im gonna make this a list first, tweak the char, then put it back.
+        name_list = list(self.name_str)
+        name_list[self.char_index] = new_char
+      
+        self.name_str = "".join(name_list)
+
+    # a down increments our current char. 
+    # Z goes to 0, 9 goes to space, space goes to A 
+    if input == "down":
+      if (self.char_index == self.ready_index):
+        self.toggle_ready()
+      else:
+
+        old_char = self.name_str[self.char_index]
+
+        if (old_char == "Z"):
+          new_char = "0"
+        elif (old_char == "9"):
+          new_char = " "
+        elif (old_char == " "): 
+          new_char = "A"
+        else:
+          new_char = chr(ord(old_char) + 1)
+      
+        self.show_char(new_char, self.char_index, True)
+       
+        # update our data.
+        
+        # unfortunately, strings don't allow for character assignment, so 
+        # im gonna make this a list first, tweak the char, then put it back.
+        name_list = list(self.name_str)
+        name_list[self.char_index] = new_char
+      
+        self.name_str = "".join(name_list)
+
+    if input == "right":
+      # don't let the cursor move past the "ready" indicator
+      if self.char_index == self.ready_index:
+        return
+      
+      # change the highlighting on the "current" location back to normal.
+      old_char = self.name_str[self.char_index]
+      self.show_char(old_char, self.char_index, False)
+
+      # "normal case"...move the cursor one to the right.
+      self.char_index += 1
+      if (self.char_index < self.ready_index):
+        new_char = self.name_str[self.char_index]
+        self.show_char(new_char, self.char_index, True)
+
+      # "special case"...jump the cursor over to the ready indicator
+      else:
+        self.show_ready()
+ 
+    if input == "left":
+      # don't let the cursor move past the first character 
+      if self.char_index == 0:
+        return
+
+      # if we were on the "ready" indicator, change its highlighting
+      if (self.char_index == self.ready_index):
+        # in this case, we need to change the char index first so that 
+        # show_ready isn't highlighted.
+        self.char_index -= 1
+        self.show_ready()
+      else:
+        # change the highlighting on the "current" location back to normal.
+        old_char = self.name_str[self.char_index]
+        self.show_char(old_char, self.char_index, False)
+        
+        # update the character index to properly highlight the next char.
+        self.char_index -= 1
+
+      new_char = self.name_str[self.char_index]
+      self.show_char(new_char, self.char_index, True)
+    
+    
+  
+
+def check_all_ready():
+  global player_data_list
+
+  for player in player_data_list:
+    if player.state != "Ready":
+      return False
+
+  return True
+    
+
+def pregame():
+  global player_data_list
+  global total_rows
+  global total_columns
+  global matrix
+
+  for player in player_data_list:
+    player.show_disconnect()
+    
+  # number of connected clients at last check.
+  last_num_connected = 0
+
+  while (check_all_ready() == False):
+    # do we have any new connections?
+    num_connected = wrapper.player_count()
+    for player_index in range(last_num_connected, num_connected):
+      player_data_list[player_index].set_connected() 
+    last_num_connected = num_connected
+    
+    input = wrapper.get_next_input()
+    if input != None:
+      # this is a little dangerous...I'm looking at the 6th char to get the
+      # index.  Won't work if we have more than 9 players...and won't work
+      # if we change the input strings.
+      player_index = int(input[0][6]) - 1
+     
+      print "Processing "+input[1]+" for player index "+str(player_index)
+
+      player_data_list[player_index].process_input(input[1])
+
+    # Quick sleep to allow other threads to run
+    time.sleep(0.001)
 
 ###################################
 # Main loop 
 ###################################
 
-# since this is the two player version, wait for 2 players to connect.
-display_text("Waiting for\nPlayer1\nPlayer2\nPlayer3\nPlayer4",red,0)
-wrapper = Gamepad_wrapper(2)
-while wrapper.player_count() == 0:
-  # no display update needed...just suspend for a little
-  time.sleep(0.001)
-display_text("Waiting for\nPlayer2\nPlayer3\nPlayer4",red,0)
-while wrapper.player_count() == 1:
-  # suspend again...
-  time.sleep(0.001)
-display_text("Waiting for\nPlayer3\nPlayer4",red,0)
-while wrapper.player_count() == 2:
-  # suspend again...
-  time.sleep(0.001)
-display_text("Waiting for\nPlayer4",red,0)
-while wrapper.player_count() == 3:
-  # suspend again...
-  time.sleep(0.001)
+wrapper = Gamepad_wrapper()
 
-# now we should have 4 players connected.
+player_data_list = []
+player_data_image = Image.new("RGB", (total_columns, total_rows))
+player_data_draw = ImageDraw.Draw(player_data_image)
+player_data_font = ImageFont.truetype('Pillow/Tests/font/Courier_New_Bold.ttf', 10)
+
+for i in range(0,4):
+  name = "PLAYER"+str(i+1)
+  color = (255,0,0) 
+  new_player = PlayerData(name, color, i)
+  player_data_list.append(new_player)
 
 while True:
+  pregame()
 
-  # Wait to start until one of the two players hits a key
-  display_text("Press Any\nButton to\nStart", green, 3)
-  wrapper.blocking_read()
+  places = play_game(4)
 
-  play_game(4)
+  # print out the winner
+  for player in places:
+    first = "1st: "+places[3]
+    second = "2nd: "+places[2]
+    third = "3rd: "+places[1]
+    fourth = "4th: "+places[0]
+  display_text(
+    first+"\n"+second+"\n"+third+"\n"+fourth,
+    green,
+    10)
+    
+
+  # Wait a little, then go to high scores
+
+  # On keypress go from high scores back to the registration screen.
+  
+  # at this point, we're going to make all players "not ready", but keep their
+  # MQTT connnections
+  for i in range(0,4):
+    player_data_list[i].state = "Input" 
+    player_data_list[i].char_index = player_data_list[i].ready_index

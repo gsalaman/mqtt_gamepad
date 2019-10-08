@@ -10,6 +10,12 @@ def process_register_request(payload):
   global _player_list
   global _client
 
+  # First check:  Make sure that player's client isn't already registered.
+  for player in _player_list:
+    if (player[0] == payload):
+      print("Client "+payload+" already registered!!!")
+      return
+
   player_count = len(_player_list) + 1
   
   # the payload of a register/request is the client ID.  Build that into
@@ -28,7 +34,7 @@ def process_register_request(payload):
 def process_player_command(player, payload):
   global _input_q
 
-  print ("process player command")
+  #print ("process player command")
   print("added "+payload+" to "+player)
 
   _input_q.append([player,payload])
@@ -41,17 +47,13 @@ def on_message(client,userdata,message):
   if (message.topic == "register/request"):
     process_register_request(message.payload)
   else:
-    print "else clause"
     process_player_command(message.topic,message.payload)
 
 class Gamepad_wrapper():
 
-  def __init__(self, players):
+  def __init__(self):
     global _client
  
-
-    self.expected_players = players
-
     self.brokername = read_broker()
  
     _client.on_message=on_message
