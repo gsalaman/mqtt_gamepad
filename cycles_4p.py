@@ -20,12 +20,12 @@ from rgbmatrix import RGBMatrix, RGBMatrixOptions
 from PIL import Image, ImageDraw, ImageFont
 
 # this is the size of ONE of our matrixes. 
-matrix_rows = 64 
-matrix_columns = 64 
+matrix_rows = 32 
+matrix_columns = 32 
 
 # how many matrixes stacked horizontally and vertically 
-matrix_horizontal = 1 
-matrix_vertical = 1
+matrix_horizontal = 5 
+matrix_vertical = 3
 
 total_rows = matrix_rows * matrix_vertical
 total_columns = matrix_columns * matrix_horizontal
@@ -635,14 +635,23 @@ class HighScoreData():
     
     # Look for the player in our high score list.
     for player_data in self.high_score_list:
+
       # if they exist, add the score to their current score.
       if (player_data[0] == player):
+
+        print("updating score for "+player)
+        print("old points: "+player_data[1])
+        print("adding "+str(score))
+
         new_score = int(player_data[1]) + score
         player_data[1] = str(new_score)
+
+        print("new score: "+player_data[1])
+
         return
 
     # if that player doesn't exist yet, add them to the list.
-    self.high_score_list.append((player, str(score)))
+    self.high_score_list.append([player, str(score)])
 
   ####################################
   # write_scores
@@ -723,13 +732,32 @@ while True:
 
   # update the score for each player
   first_total = int(high_score_data.get_score(places[3])) + points_first
-  high_score_data.update_score(places[3], first_total)
+  high_score_data.update_score(places[3], points_first)
+
   second_total = int(high_score_data.get_score(places[2])) + points_second
-  high_score_data.update_score(places[2], second_total)
+  high_score_data.update_score(places[2], points_second)
+
   third_total = int(high_score_data.get_score(places[1])) + points_third
-  high_score_data.update_score(places[1], third_total)
+  high_score_data.update_score(places[1], points_third)
+
   fourth_total = int(high_score_data.get_score(places[0])) + points_fourth
-  high_score_data.update_score(places[0], fourth_total)
+  high_score_data.update_score(places[0], points_fourth)
+
+  print("1st place: " + places[3] +
+        " score: " + str(points_first) +
+        " total: "+ str(first_total) )
+  
+  print("2nd place: " + places[2] +
+        " score: " + str(points_second) +
+        " total: "+ str(second_total) )
+
+  print("1st place: " + places[1] +
+        " score: " + str(points_third) +
+        " total: "+ str(third_total) )
+
+  print("1st place: " + places[0] +
+        " score: " + str(points_fourth) +
+        " total: "+ str(fourth_total) )
 
   # save the high score file
   high_score_data.write_score_file()
@@ -742,14 +770,14 @@ while True:
   display_text(
     first+"\n"+second+"\n"+third+"\n"+fourth,
     green,
-    5)
+    10)
     
   # now show high scores
   top_score_string = ""
-  top_scores = high_score_data.get_top_scores(5)
+  top_scores = high_score_data.get_top_scores(8)
   for score in top_scores:
     top_score_string = top_score_string+score[0]+":"+score[1]+"\n"
-  display_text(top_score_string,green,5)
+  display_text(top_score_string,green,10)
 
   # at this point, we're going to make all players "not ready", but keep their
   # MQTT connnections
