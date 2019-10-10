@@ -20,12 +20,12 @@ from rgbmatrix import RGBMatrix, RGBMatrixOptions
 from PIL import Image, ImageDraw, ImageFont
 
 # this is the size of ONE of our matrixes. 
-matrix_rows = 64 
-matrix_columns = 64 
+matrix_rows = 32 
+matrix_columns = 32 
 
 # how many matrixes stacked horizontally and vertically 
-matrix_horizontal = 1 
-matrix_vertical = 1
+matrix_horizontal = 5 
+matrix_vertical = 3
 
 total_rows = matrix_rows * matrix_vertical
 total_columns = matrix_columns * matrix_horizontal
@@ -116,9 +116,11 @@ def show_crash(crash_x, crash_y):
 #  display_text()
 ###################################
 def display_text(my_text, text_color, delay):
+    global display_text_font
+
     temp_image = Image.new("RGB", (total_columns, total_rows))
     temp_draw = ImageDraw.Draw(temp_image)
-    temp_draw.text((0,0),my_text, fill=text_color)
+    temp_draw.text((0,0),my_text, fill=text_color, font=display_text_font)
     matrix.SetImage(temp_image,0,0)
     time.sleep(delay)
 
@@ -532,9 +534,6 @@ class PlayerData():
 
       new_char = self.name_str[self.char_index]
       self.show_char(new_char, self.char_index, True)
-    
-    
-  
 
 def check_all_ready():
   global player_data_list
@@ -579,9 +578,137 @@ def pregame():
     # Quick sleep to allow other threads to run
     time.sleep(0.001)
 
+######################################################
+# Class HighScoreData
+# 
+#   This class is responsible for maintaining high score data.
+#   
+#   Persistent data is written as a file (cycles.scores by default).
+#   Each line contains a name, followed by comma, followed by the current
+#   High score for that player.
+#
+#######################################################
+class HighScoreData():
+ 
+  def __init__(self):
+    # High score list is a list of lists, with each entry being (name,score)
+    self.high_score_list = []
+
+    self.high_score_file = "cycles.scores"
+    self.read_high_scores()
+
+  ######################################
+  # read_high_scores
+  #
+  # Reads the high scores from the specified file into our high score list.
+  # File (and list) format:  name,score
+  ####################################### 
+  def read_high_scores(self):
+    try:
+      file = open(self.high_score_file, 'r')
+      for line in file:
+        line=line.strip()
+        self.high_score_list.append(line.split(','))
+      print("High score file processed")
+      file.close()
+     
+    except:
+      # if no file exists, there's nothing to do..we're okay with an empty list.
+      print ("No high score file available.  Empty high score list.")
+
+  ####################################
+  # print_high_scores
+  #
+  # debug function, used to print out our high score list.
+  ####################################
+  def print_high_scores(self):
+    for item in self.high_score_list:
+      tmp_str = "Player: "+item[0]+", Score: "+item[1] 
+      print tmp_str
+
+  ####################################
+  # update_score
+  #
+  # This function updates the cumulative score for a given player.
+  ####################################
+  def update_score(self, player, score):
+    
+    # Look for the player in our high score list.
+    for player_data in self.high_score_list:
+
+      # if they exist, add the score to their current score.
+      if (player_data[0] == player):
+
+        print("updating score for "+player)
+        print("old points: "+player_data[1])
+        print("adding "+str(score))
+
+        new_score = int(player_data[1]) + score
+        player_data[1] = str(new_score)
+
+        print("new score: "+player_data[1])
+
+        return
+
+    # if that player doesn't exist yet, add them to the list.
+    self.high_score_list.append([player, str(score)])
+
+  ####################################
+  # write_scores
+  #
+  # This function writes the high score file
+  ####################################
+  def write_score_file(self):
+    with open(self.high_score_file, 'w') as file:
+      for line in self.high_score_list:
+        file.write(line[0]+","+line[1]+"\n")
+      print("High score file updated")
+
+  ####################################
+  # get_score 
+  #
+  # This function return a high score (as a string) for a given player. 
+  ####################################
+  def get_score(self, player):
+    # Look for the player in our high score list.
+    for player_data in self.high_score_list:
+      # if they exist, add the score to their current score.
+      if (player_data[0] == player):
+        return player_data[1]
+
+    # if that player doesn't exist, their score is zero. 
+    return "0" 
+
+  ####################################
+  # get_top_scores 
+  ####################################
+  def get_top_scores(self, number):
+
+    # start by sorting the scores
+    self.high_score_list.sort(key = score_sort_helper, reverse=True)
+
+    # then return the top scores
+    sorted_list = []
+    count = 0
+    for line in self.high_score_list:
+      sorted_list.append(line)
+      count += 1
+      if count == number:
+        break;
+
+    return sorted_list
+
+def score_sort_helper(val):
+  return (int(val[1]))
+
 ###################################
 # Main loop 
 ###################################
+high_score_data = HighScoreData()
+points_first = 5
+points_second = 3
+points_third = 1
+points_fourth = 1
 
 wrapper = Gamepad_wrapper()
 
@@ -589,6 +716,8 @@ player_data_list = []
 player_data_image = Image.new("RGB", (total_columns, total_rows))
 player_data_draw = ImageDraw.Draw(player_data_image)
 player_data_font = ImageFont.truetype('Pillow/Tests/font/Courier_New_Bold.ttf', 10)
+
+display_text_font = player_data_font
 
 for i in range(0,4):
   name = "PLAYER"+str(i+1)
@@ -601,22 +730,55 @@ while True:
 
   places = play_game(4)
 
+  # update the score for each player
+  first_total = int(high_score_data.get_score(places[3])) + points_first
+  high_score_data.update_score(places[3], points_first)
+
+  second_total = int(high_score_data.get_score(places[2])) + points_second
+  high_score_data.update_score(places[2], points_second)
+
+  third_total = int(high_score_data.get_score(places[1])) + points_third
+  high_score_data.update_score(places[1], points_third)
+
+  fourth_total = int(high_score_data.get_score(places[0])) + points_fourth
+  high_score_data.update_score(places[0], points_fourth)
+
+  print("1st place: " + places[3] +
+        " score: " + str(points_first) +
+        " total: "+ str(first_total) )
+  
+  print("2nd place: " + places[2] +
+        " score: " + str(points_second) +
+        " total: "+ str(second_total) )
+
+  print("1st place: " + places[1] +
+        " score: " + str(points_third) +
+        " total: "+ str(third_total) )
+
+  print("1st place: " + places[0] +
+        " score: " + str(points_fourth) +
+        " total: "+ str(fourth_total) )
+
+  # save the high score file
+  high_score_data.write_score_file()
+
   # print out the winner
-  for player in places:
-    first = "1st: "+places[3]
-    second = "2nd: "+places[2]
-    third = "3rd: "+places[1]
-    fourth = "4th: "+places[0]
+  first = "1st: "+places[3]+" ("+str(first_total)+")"
+  second = "2nd: "+places[2]+" ("+str(second_total)+")"
+  third = "3rd: "+places[1]+" ("+str(third_total)+")"
+  fourth = "4th: "+places[0]+" ("+str(fourth_total)+")"
   display_text(
     first+"\n"+second+"\n"+third+"\n"+fourth,
     green,
     10)
     
+  # now show high scores
+  top_score_string = ""
+  top_scores = high_score_data.get_top_scores(8)
+  for score in top_scores:
+    top_score_string = top_score_string+score[0]+":"+score[1]+"\n"
+  display_text(top_score_string,green,10)
 
-  # Wait a little, then go to high scores
-
-  # On keypress go from high scores back to the registration screen.
-  
   # at this point, we're going to make all players "not ready", but keep their
   # MQTT connnections
   for i in range(0,4):
