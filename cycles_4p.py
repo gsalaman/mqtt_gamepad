@@ -20,12 +20,12 @@ from rgbmatrix import RGBMatrix, RGBMatrixOptions
 from PIL import Image, ImageDraw, ImageFont
 
 # this is the size of ONE of our matrixes. 
-matrix_rows = 32 
-matrix_columns = 32 
+matrix_rows = 64 
+matrix_columns = 64 
 
 # how many matrixes stacked horizontally and vertically 
-matrix_horizontal = 5 
-matrix_vertical = 3
+matrix_horizontal = 1 
+matrix_vertical = 1
 
 total_rows = matrix_rows * matrix_vertical
 total_columns = matrix_columns * matrix_horizontal
@@ -124,6 +124,38 @@ def display_text(my_text, text_color, delay):
     matrix.SetImage(temp_image,0,0)
     time.sleep(delay)
 
+###################################
+#  centered_text()
+###################################
+def centered_text(my_text, box_color, text_color, font, delay):
+    global total_columns
+    global total_rows
+    global matrix
+
+    # getsize returns a tuple of the x and y size of the font string.
+    text_size = font.getsize(my_text)
+    
+    # we're going to draw a box around that text, so we need a little buffer
+    # this is going to be the buffer for each side.
+    pixel_buffer = 2
+    box_size_x = text_size[0] + (2*pixel_buffer)
+    box_size_y = text_size[1] + (2*pixel_buffer)
+
+    text_image = Image.new("RGB", (box_size_x, box_size_y))
+    text_draw = ImageDraw.Draw(text_image)
+    box = (0,0,box_size_x-1,box_size_y-1)
+    text_draw.rectangle(box, outline=box_color)
+
+    # do some math to center our box
+    # box_x and box_y define the top left corner
+    box_x = (total_columns - box_size_x)/2 
+    box_y = (total_rows - box_size_y)/2
+
+    text_draw.text((pixel_buffer,pixel_buffer),my_text, fill=text_color, font=font)
+
+    matrix.SetImage(text_image,box_x,box_y)
+    time.sleep(delay)
+
 ########################################
 # apply_input
 ########################################
@@ -172,6 +204,7 @@ def play_game(num_players):
   global collision
   global matrix
   global player_data_list
+  global display_text_font
   
 
   # this version is hardcoded to 4 players
@@ -294,6 +327,9 @@ def play_game(num_players):
   for winner_index in range(0, num_players):
     if (player_crashed[winner_index] == False):
       player_place.append(player_data_list[winner_index].name_str)
+      winner_string = player_data_list[winner_index].name_str+" WINS!!!"
+      winner_color = player_data_list[winner_index].color
+      centered_text(winner_string,(255,255,255),winner_color,display_text_font, 10) 
       break;
   
   if winner_index == num_players:
@@ -704,6 +740,8 @@ def score_sort_helper(val):
 ###################################
 # Main loop 
 ###################################
+
+
 high_score_data = HighScoreData()
 points_first = 5
 points_second = 3
@@ -719,9 +757,12 @@ player_data_font = ImageFont.truetype('Pillow/Tests/font/Courier_New_Bold.ttf', 
 
 display_text_font = player_data_font
 
+start_text = "Cycles Game"
+centered_text(start_text, (255,0,0), (0,0,255), display_text_font,5)
+
 for i in range(0,4):
   name = "PLAYER"+str(i+1)
-  color = (255,0,0) 
+  color = player_color[i] 
   new_player = PlayerData(name, color, i)
   player_data_list.append(new_player)
 
