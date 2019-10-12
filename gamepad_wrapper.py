@@ -5,10 +5,12 @@ from broker import read_broker
 _input_q = []
 _player_list = []
 _client = mqtt.Client("Gamepad_Wrapper")
+_next_player_number = 1
 
 def process_register_request(payload):
   global _player_list
   global _client
+  global _next_player_number 
 
   # First check:  Make sure that player's client isn't already registered.
   for player in _player_list:
@@ -16,18 +18,16 @@ def process_register_request(payload):
       print("Client "+payload+" already registered!!!")
       return
 
-  player_count = len(_player_list) + 1
-  
   # the payload of a register/request is the client ID.  Build that into
   # our response
   topic = "register/"+payload
-  player_string = "player"+str(player_count)
+  player_string = "player"+str(_next_player_number)
+  _next_player_number += 1
 
   print ("Subscribing to "+player_string)
   _client.subscribe(player_string)
   print ("Responding to client "+payload+" with "+player_string)
   _client.publish(topic, player_string)
-  
   _player_list.append([payload,player_string])
 
 
