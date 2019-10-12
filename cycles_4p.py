@@ -211,7 +211,8 @@ def play_game(num_players):
   global display_text_font
   
 
-  # this version is hardcoded to 4 players
+  # num players is the MAXIMUM number of supported players.  We may have
+  # fewer than that. 
   if (num_players != 4):
     print("num_players = "+str(num_players))
     exit(1)
@@ -236,7 +237,23 @@ def play_game(num_players):
   player_image = []
   player_draw = []
 
+  player_dir = ["down", "up", "right", "left"]
+ 
+  player_crashed = [False, False, False, False]
+  player_place = []  
+
+  # player_present indicates whether that player is actually in the game.
+  # If there are "not ready", then don't have the game process that player.
+  player_present = [True, True, True, True] 
+  num_present_players = 0
+
   for player_index in range(0,num_players): 
+    if (player_data_list[player_index].state != "Ready"):
+      player_present[player_index] = False
+      player_crashed[player_index] = True
+      continue
+      
+    num_present_players += 1
     pos = player_pos[player_index]
     collision[pos[0]][pos[1]] = 1
   
@@ -251,10 +268,6 @@ def play_game(num_players):
     player_draw.append(temp_draw)
     matrix.SetImage(temp_image, pos[0], pos[1])
     
-  player_dir = ["down", "up", "right", "left"]
- 
-  player_crashed = [False, False, False, False]
-  player_place = []  
  
   last_update_time = datetime.now()
 
@@ -298,6 +311,10 @@ def play_game(num_players):
     for index in range(0,num_players):
       # Don't update for crashed players
       if (player_crashed[index]):
+        continue
+
+      # Don't update for players that aren't present
+      if (player_present[index] == False):
         continue
 
       new_pos = next_player_location(player_pos[index], player_dir[index])
@@ -575,15 +592,30 @@ class PlayerData():
       new_char = self.name_str[self.char_index]
       self.show_char(new_char, self.char_index, True)
 
+#######################################
+# check_all_ready
+#
+#   We'll start the game when at least two people are "ready" with the rest
+#   disconnected.
+#######################################
 def check_all_ready():
   global player_data_list
 
-  for player in player_data_list:
-    if player.state != "Ready":
-      return False
+  min_players = 2
+  ready_count = 0
+  inputting_count = 0 
 
-  return True
-    
+  for player in player_data_list:
+    if player.state == "Ready":
+      ready_count += 1
+    elif player.state == "Input":
+      inputting_count += 1
+
+  # We're ready if at least two people are ready and no one is inputting.
+  if (ready_count >= min_players) and (inputting_count ==0):
+    return True
+  else:
+    return False
 
 def pregame():
   global player_data_list
@@ -747,12 +779,12 @@ def score_sort_helper(val):
 
 
 high_score_data = HighScoreData()
-points_first = 5
-points_second = 3
-points_third = 1
-points_fourth = 1
 
 wrapper = Gamepad_wrapper()
+
+# First place gets 5 points, second 3, third and fourth 1.
+points_for_place = [5,3,1,1]
+places_string = ["1st: ", "2nd: ", "3rd: ", "4th: "]
 
 player_data_list = []
 player_data_image = Image.new("RGB", (total_columns, total_rows))
@@ -775,48 +807,28 @@ while True:
 
   places = play_game(4)
 
+  print places
+
   # update the score for each player
-  first_total = int(high_score_data.get_score(places[3])) + points_first
-  high_score_data.update_score(places[3], points_first)
+  index = 0
+  result_string = ""
+  for player_name in reversed(places):
+    new_total = int(high_score_data.get_score(player_name)) + points_for_place[index]
 
-  second_total = int(high_score_data.get_score(places[2])) + points_second
-  high_score_data.update_score(places[2], points_second)
+    high_score_data.update_score(player_name, points_for_place[index])
 
-  third_total = int(high_score_data.get_score(places[1])) + points_third
-  high_score_data.update_score(places[1], points_third)
+    result_string = result_string + places_string[index] + player_name + "("+str(new_total)+")"+"\n"
 
-  fourth_total = int(high_score_data.get_score(places[0])) + points_fourth
-  high_score_data.update_score(places[0], points_fourth)
-
-  print("1st place: " + places[3] +
-        " score: " + str(points_first) +
-        " total: "+ str(first_total) )
+    index += 1
   
-  print("2nd place: " + places[2] +
-        " score: " + str(points_second) +
-        " total: "+ str(second_total) )
-
-  print("1st place: " + places[1] +
-        " score: " + str(points_third) +
-        " total: "+ str(third_total) )
-
-  print("1st place: " + places[0] +
-        " score: " + str(points_fourth) +
-        " total: "+ str(fourth_total) )
+  print result_string
 
   # save the high score file
   high_score_data.write_score_file()
 
   # print out the winner
-  first = "1st: "+places[3]+" ("+str(first_total)+")"
-  second = "2nd: "+places[2]+" ("+str(second_total)+")"
-  third = "3rd: "+places[1]+" ("+str(third_total)+")"
-  fourth = "4th: "+places[0]+" ("+str(fourth_total)+")"
-  display_text(
-    first+"\n"+second+"\n"+third+"\n"+fourth,
-    green,
-    10)
-    
+  display_text(result_string, green, 10)
+
   # now show high scores
   top_score_string = ""
   top_scores = high_score_data.get_top_scores(8)
@@ -824,8 +836,9 @@ while True:
     top_score_string = top_score_string+score[0]+":"+score[1]+"\n"
   display_text(top_score_string,green,10)
 
-  # at this point, we're going to make all players "not ready", but keep their
-  # MQTT connnections
-  for i in range(0,4):
-    player_data_list[i].state = "Input" 
-    player_data_list[i].char_index = player_data_list[i].ready_index
+  # at this point, we're going to make any active players "not ready", but 
+  # keep their MQTT connnections.  Disconnects stay disconnected.
+  for player in player_data_list:
+    if player.state == "Ready":
+      player.state = "Input"
+      player.char_index = player.ready_index
