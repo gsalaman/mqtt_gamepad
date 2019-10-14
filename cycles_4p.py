@@ -780,7 +780,7 @@ def score_sort_helper(val):
 
 high_score_data = HighScoreData()
 
-wrapper = Gamepad_wrapper()
+wrapper = Gamepad_wrapper(4)
 
 # First place gets 5 points, second 3, third and fourth 1.
 points_for_place = [5,3,1,1]
@@ -827,7 +827,7 @@ while True:
   high_score_data.write_score_file()
 
   # print out the winner
-  display_text(result_string, green, 10)
+  display_text(result_string, green, 5)
 
   # now show high scores
   top_score_string = ""
