@@ -153,3 +153,17 @@ class Gamepad_wrapper():
 
     del _input_q
     _input_q = []
+
+  def check_connected(self, player_name):
+    global _player_list
+    
+
+    # find that player in our list.
+    found = False
+    for player in _player_list:
+      if (player != None):
+        if (player[1] == player_name):
+          found = True
+          break
+
+    return found

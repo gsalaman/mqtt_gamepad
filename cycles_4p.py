@@ -408,6 +408,11 @@ class PlayerData():
 
   def set_connected(self):
     self.state = "Input"
+    self.char_index = 0
+    self.show_line()
+
+  def set_disconnected(self):
+    self.state = "Disconnected"
     self.show_line()
 
   def show_color(self):
@@ -630,12 +635,31 @@ def pregame():
   last_num_connected = 0
 
   while (check_all_ready() == False):
+    ''' Old vvv
     # do we have any new connections?
     num_connected = wrapper.player_count()
     for player_index in range(last_num_connected, num_connected):
       player_data_list[player_index].set_connected() 
     last_num_connected = num_connected
+    '''
     
+    # update our connection state for each player.  Specifially:
+    #   * If they were connected and now are disconnected, show disconnecxt.
+    #   * If they were disconnected and now are connected, start inputting.   
+    for player_index in range(0,4):
+      player_str = "player"+str(player_index)
+      connected = wrapper.check_connected(player_str)
+
+      # check for the disconnect->inputting transition
+      if player_data_list[player_index].state == "Disconnected":
+        if (connected == True):
+          player_data_list[player_index].set_connected()
+     
+      # check for a transition to disconnected
+      else:
+        if (connected == False):
+          player_data_list(player_index).set_disconnected()
+
     input = wrapper.get_next_input()
     if input != None:
       # this is a little dangerous...I'm looking at the 6th char to get the
