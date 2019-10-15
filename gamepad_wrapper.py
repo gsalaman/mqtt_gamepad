@@ -22,10 +22,11 @@ def process_register_release(payload):
   # find the client
   index = 0
   for player in _player_list:
-    if (player[0] == payload):
-      print("Deregistering client "+payload)
-      _player_list[index] = None
-      return
+    if (player != None):
+      if (player[0] == payload):
+        print("Deregistering client "+payload)
+        _player_list[index] = None
+        return
     index += 1
       
 def process_register_request(payload):

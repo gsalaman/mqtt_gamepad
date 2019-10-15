@@ -248,6 +248,20 @@ def play_game(num_players):
   num_present_players = 0
 
   for player_index in range(0,num_players): 
+
+    # create the image list for ALL players, even if they're not present. 
+    # this is needed because we access it as an array, and non-present
+    # folks will leave a "hole" in that array.  Note we won't acutally 
+    # display the non-present players.
+    color = player_color[player_index]
+    temp_image = Image.new("RGB", (1,1))
+    temp_draw = ImageDraw.Draw(temp_image)
+    temp_draw.rectangle((0,0,0,0), 
+                        outline=color,
+                        fill=color)
+    player_image.append(temp_image)
+    player_draw.append(temp_draw)
+
     if (player_data_list[player_index].state != "Ready"):
       player_present[player_index] = False
       player_crashed[player_index] = True
@@ -256,18 +270,7 @@ def play_game(num_players):
     num_present_players += 1
     pos = player_pos[player_index]
     collision[pos[0]][pos[1]] = 1
-  
-    color = player_color[player_index]
-
-    temp_image = Image.new("RGB", (1,1))
-    temp_draw = ImageDraw.Draw(temp_image)
-    temp_draw.rectangle((0,0,0,0), 
-                        outline=color,
-                        fill=color)
-    player_image.append(temp_image)
-    player_draw.append(temp_draw)
     matrix.SetImage(temp_image, pos[0], pos[1])
-    
  
   last_update_time = datetime.now()
 
@@ -379,6 +382,12 @@ class PlayerData():
     self.name_color = (0,0,255)
     self.highlight_color = (255,0,0)
     
+  def show_state(self):
+    if self.state == "Disconnect":
+      self.show_disconnect()
+    else:
+      self.show_line()
+
   def erase_line(self):
     player_data_draw.rectangle((0,self.player_number*self.row_height, 
                          total_columns, self.row_height*(self.player_number+1)),
@@ -390,6 +399,8 @@ class PlayerData():
     global player_data_image
     global player_data_draw
     global player_data_font
+
+    self.erase_line()
 
     disc_color = (255,0,0)
     tmp_str = "P"+str(self.player_number + 1)+" DISCONNECTED"
@@ -410,10 +421,12 @@ class PlayerData():
     self.state = "Input"
     self.char_index = 0
     self.show_line()
+    print (self.name_str + " now connected")
 
   def set_disconnected(self):
-    self.state = "Disconnected"
-    self.show_line()
+    self.state = "Disconnect"
+    self.show_disconnect()
+    print (self.name_str + " now disconnected")
 
   def show_color(self):
     #coming soon
@@ -488,8 +501,10 @@ class PlayerData():
   def toggle_ready(self):
     if self.state == "Ready":
       self.state = "Input"
+      print(self.name_str+" set !READY")
     elif self.state == "Input":
       self.state = "Ready"
+      print(self.name_str+" set READY")
     else:
       print("Unexpected state in toggle_ready: ")
       print(self.state)
@@ -628,37 +643,28 @@ def pregame():
   global total_columns
   global matrix
 
+  # on entry, we want to show the player state per line.
   for player in player_data_list:
-    player.show_disconnect()
-    
-  # number of connected clients at last check.
-  last_num_connected = 0
+    player.show_state()
 
   while (check_all_ready() == False):
-    ''' Old vvv
-    # do we have any new connections?
-    num_connected = wrapper.player_count()
-    for player_index in range(last_num_connected, num_connected):
-      player_data_list[player_index].set_connected() 
-    last_num_connected = num_connected
-    '''
     
     # update our connection state for each player.  Specifially:
     #   * If they were connected and now are disconnected, show disconnecxt.
     #   * If they were disconnected and now are connected, start inputting.   
     for player_index in range(0,4):
-      player_str = "player"+str(player_index)
+      player_str = "player"+str(player_index+1)
       connected = wrapper.check_connected(player_str)
 
       # check for the disconnect->inputting transition
-      if player_data_list[player_index].state == "Disconnected":
+      if player_data_list[player_index].state == "Disconnect":
         if (connected == True):
           player_data_list[player_index].set_connected()
      
       # check for a transition to disconnected
       else:
         if (connected == False):
-          player_data_list(player_index).set_disconnected()
+          player_data_list[player_index].set_disconnected()
 
     input = wrapper.get_next_input()
     if input != None:
