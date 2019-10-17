@@ -124,5 +124,11 @@ except KeyboardInterrupt:
 # Reset the terminal on exit
 ###################################
 termios.tcsetattr(fd, termios.TCSANOW, oldterm)
-
 fcntl.fcntl(fd, fcntl.F_SETFL, oldflags)
+
+# send a release 
+print("sending register/release...")
+client.publish("register/release", client_name)
+time.sleep(1)
+print("...done")
+
