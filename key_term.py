@@ -71,6 +71,7 @@ def on_message(client,userdata,message):
 broker_address = read_broker()
 client_name = "key_term"
 client = mqtt.Client(client_name)
+client.will_set("register/release", client_name)
 try:
   client.connect(broker_address)
 except:
@@ -126,9 +127,4 @@ except KeyboardInterrupt:
 termios.tcsetattr(fd, termios.TCSANOW, oldterm)
 fcntl.fcntl(fd, fcntl.F_SETFL, oldflags)
 
-# send a release 
-print("sending register/release...")
-client.publish("register/release", client_name)
-time.sleep(1)
-print("...done")
-
+# No explicit release needed...last will takes care of this.
