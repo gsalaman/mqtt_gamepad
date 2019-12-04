@@ -6,6 +6,7 @@ import termios, fcntl
 
 # used to slow down our main loop
 import time
+from datetime import datetime
 
 import paho.mqtt.client as mqtt
 from broker import read_broker
@@ -85,14 +86,19 @@ subscribe_str = "register/"+client_name
 print("subscribing to "+subscribe_str)
 client.subscribe(subscribe_str)
 client.publish("register/request", client_name)
+last_reg_time = datetime.now()
 
 
 try:
-  # want this eventually to be a periodic try...but as of right now, the game 
-  # needs to be running first.
   print("waiting for game...")
   while (registration_complete != True):
-    pass
+    # is it time to try registering again?
+    current_time = datetime.now()
+    deltaT = current_time - last_reg_time
+    if (deltaT.total_seconds() > 2):
+      print("registration timed out.  Retrying...")
+      client.publish("register/request", client_name)
+      last_reg_time = current_time;
   print("registration complete")
 
   print_cmds()
