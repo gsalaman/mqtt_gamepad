@@ -151,7 +151,7 @@ def read_high_scores():
 ##################################
 # Input name 
 #   This function will return a 3 character string
-#   built on arcade-style PS3 inputs
+#   built on arcade-style inputs
 ###################################
 def input_name():
   global wrapper 
@@ -177,6 +177,12 @@ def input_name():
   highlight_color = (255,0,0)
   
   while current_char < 3:
+
+    # check to see if the controller is still connected
+    if (wrapper.player_count() < 1):
+      # no player connected.  We're done.
+      return("XXX")
+
     # Start by indicating which letter we're changing
     # we're gonna erase all three lines first, and then redraw
     temp_draw.rectangle((0,top_row,3*column_spacing+column_offset,bottom_row+10), fill = (0,0,0))
@@ -192,6 +198,9 @@ def input_name():
     while (tmp_input == None):
       if (_shutdown == True):
         exit(0)
+      if (wrapper.player_count() < 1):
+        #player left in the middle
+        return("XXX");
       time.sleep(0.001)
       tmp_input = wrapper.get_next_input()
 
@@ -579,14 +588,18 @@ def shutdown_cb():
 ####################################
 # Main loop
 ####################################
+''' I don't think we need this anymore...
 # wait for a controller to connexct.
 temp_image = Image.new("RGB", (total_columns, total_rows))
 temp_draw = ImageDraw.Draw(temp_image)
-temp_draw.text((0,0),"Waiting for controller", fill=(255,0,0), font = fntLG)
+temp_draw.text((0,0),"Waiting for controller", fill=(255,0,0), font = fntSM)
 matrix.SetImage(temp_image, 0, 0)
+'''
 
 wrapper = Gamepad_wrapper(1)
 wrapper.set_shutdown_cb(shutdown_cb)
+
+'''
 while wrapper.player_count() != 1:
   # check for exit
   if (_shutdown == True):
@@ -594,9 +607,28 @@ while wrapper.player_count() != 1:
 
   # briefly suspend our thread
   time.sleep(0.001)
+'''
 
 
 while True:
+  # start by making sure we have a gamepad connected
+  if (wrapper.player_count() < 1):
+    #print a message telling user we're waiting for a controller
+    temp_image = Image.new("RGB", (total_columns, total_rows))
+    temp_draw = ImageDraw.Draw(temp_image)
+    temp_draw.text((0,0),"Waiting for controller", fill=(255,0,0), font = fntSM)
+    matrix.SetImage(temp_image, 0, 0)
+
+    # ...and wait for the controller to connect
+    while wrapper.player_count() < 1:
+      # check for exit
+      if (_shutdown == True):
+        exit(0)
+
+      # briefly suspend our thread
+      time.sleep(0.001)
+ 
+  
   # Show High Scores, waiting for any input to start.
   read_high_scores()
   show_high_scores()
