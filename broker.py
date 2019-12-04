@@ -8,5 +8,5 @@ def read_broker():
        line = line.strip()
        return line
   except:
-    # if no file exists, return localhost.
-    return "127.0.0.1"
+    # if no file exists, use Dawson's broker 
+    return "mqttbroker"
