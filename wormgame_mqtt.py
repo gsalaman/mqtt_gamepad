@@ -4,6 +4,9 @@
 # instead of using time and delays, I'm going to use datetime
 # to determine whether I want to run the "update" portion of my loop.
 # Still need time for "end game" pause though.
+
+import os
+
 import time
 from datetime import datetime
 
@@ -119,9 +122,12 @@ def eval_score(score):
 def write_high_scores():
   global high_scores
 
-  with open('high_scores.txt','w') as f:
-    for score in high_scores:
-      f.write(str(score[0])+","+score[1]+"\n")
+  try:
+    with open("high_scores.txt","w") as file:
+      for score in high_scores:
+        file.write(str(score[0])+","+score[1]+"\n")
+  except:
+    print("Unable to write high score file");
       
 ####################################
 # Read high score file into high_scores list
@@ -129,13 +135,16 @@ def write_high_scores():
 def read_high_scores():
   global high_scores
 
-  with open('high_scores.txt','r') as f:
-    del high_scores[:]
-    for line in f:
-      line = line.strip()
-      score = line.split(",")     
-      score[0] = int(score[0])
-      high_scores.append(score)
+  try:
+    with open('high_scores.txt','r') as f:
+      del high_scores[:]
+      for line in f:
+        line = line.strip()
+        score = line.split(",")     
+        score[0] = int(score[0])
+        high_scores.append(score)
+  except:
+    print("No high score file found.  Using defaults");
       
 ##################################
 # Input name 
@@ -551,7 +560,6 @@ def play_game():
 ####################################
 # Main loop
 ####################################
-
 # wait for a controller to connexct.
 temp_image = Image.new("RGB", (total_columns, total_rows))
 temp_draw = ImageDraw.Draw(temp_image)
