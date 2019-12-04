@@ -16,6 +16,19 @@ _player_list = []
 
 _client = mqtt.Client("Gamepad_Wrapper")
 
+def default_shutdown_cb():
+  #default shutdown does nothing
+  print("default shutdown callback:  does nothing");
+
+_shutdown_cb = default_shutdown_cb
+
+def process_shutdown():
+  global _shutdown_cb
+
+  # call the shutdown callback
+  _shutdown_cb()
+
+
 def process_register_release(payload):
   global _player_list
 
@@ -87,6 +100,8 @@ def on_message(client,userdata,message):
     process_register_request(message.payload)
   elif (message.topic == "register/release"):
     process_register_release(message.payload)
+  elif (message.topic == "shutdown"):
+    process_shutdown()
   else:
     process_player_command(message.topic,message.payload)
 
@@ -114,7 +129,14 @@ class Gamepad_wrapper():
     # responses, and our callback won't handle those.
     _client.subscribe("register/request") 
     _client.subscribe("register/release")
+    _client.subscribe("shutdown");
     
+  def set_shutdown_cb(self, cb):
+    global _shutdown_cb
+
+    _shutdown_cb = cb
+    print("set shutdown callback")
+
   def get_next_input(self):
     global _input_q
 

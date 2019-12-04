@@ -14,6 +14,8 @@ import random
 
 from gamepad_wrapper import Gamepad_wrapper
 
+_shutdown = False
+
 ###################################
 # Graphics imports, constants and structures
 ###################################
@@ -186,7 +188,14 @@ def input_name():
     matrix.SetImage(temp_image, 0, 0)
 
     # now wait for an input from our gamepad.  
-    current_input = (wrapper.blocking_read())[1]
+    tmp_input = wrapper.get_next_input()
+    while (tmp_input == None):
+      if (_shutdown == True):
+        exit(0)
+      time.sleep(0.001)
+      tmp_input = wrapper.get_next_input()
+
+    current_input = (tmp_input)[1]
     
     #if it's an "up", decrement the character
     if (current_input == "up"):
@@ -412,6 +421,7 @@ def play_game():
   global worm
   global score
   global wrapper
+  global _shutdown
 
   reset_globals()
 
@@ -426,6 +436,9 @@ def play_game():
   
 
   while True:
+    # start by checking for exit
+    if (_shutdown == True):
+      exit(0)
 
     dir_pressed = False
     current_time = datetime.now()
@@ -557,6 +570,12 @@ def play_game():
   # Now that were done, empty any move commands outta the queue.
   wrapper.empty_commands()
 
+def shutdown_cb():
+  global _shutdown
+
+  print("Got the shutdown callback!!!")
+  _shutdown = True 
+
 ####################################
 # Main loop
 ####################################
@@ -567,16 +586,27 @@ temp_draw.text((0,0),"Waiting for controller", fill=(255,0,0), font = fntLG)
 matrix.SetImage(temp_image, 0, 0)
 
 wrapper = Gamepad_wrapper(1)
+wrapper.set_shutdown_cb(shutdown_cb)
 while wrapper.player_count() != 1:
+  # check for exit
+  if (_shutdown == True):
+    exit(0)
+
   # briefly suspend our thread
   time.sleep(0.001)
+
 
 while True:
   # Show High Scores, waiting for any input to start.
   read_high_scores()
   show_high_scores()
   
-  wrapper.blocking_read()
+  # Because we now need to look for shutdown events, we cannot block.
+  # change this to a non-blocking read, checking for input and shutdown.  
+  #wrapper.blocking_read()
+  while (wrapper.get_next_input() == None):
+    if (_shutdown == True):
+      exit(0)
 
   #blank the screen
   temp_image = Image.new("RGB", (total_columns, total_rows))
