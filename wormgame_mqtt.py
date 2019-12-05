@@ -624,6 +624,17 @@ while True:
   while (wrapper.get_next_input() == None):
     if (_shutdown == True):
       process_shutdown() 
+    
+    # need to detect the case where the shutdown comes whilst we're waiting.
+    # if that happens, we want to short-circuit the loop, which will 
+    # re-display the "waiting for player" message.
+    if (wrapper.player_count() < 1):
+      #this breaks us out of the "get next input loop"...
+      break
+
+  # ...and this continue will short-circut to the top of the main loop.
+  if (wrapper.player_count() < 1):
+    continue
 
   #blank the screen
   temp_image = Image.new("RGB", (total_columns, total_rows))
