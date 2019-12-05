@@ -26,12 +26,12 @@ fntLG = ImageFont.truetype('Pillow/Tests/fonts/Courier_New_Bold.ttf', 14)
 fntSM = ImageFont.truetype('Pillow/Tests/fonts/times.ttf', 12)
 
 # this is the size of ONE of our matrixes. 
-matrix_rows = 64 
-matrix_columns = 64 
+matrix_rows = 32 
+matrix_columns = 32 
 
 # how many matrixes stacked horizontally and vertically 
-matrix_horizontal = 1 
-matrix_vertical = 1
+matrix_horizontal = 5 
+matrix_vertical = 3
 
 total_rows = matrix_rows * matrix_vertical
 total_columns = matrix_columns * matrix_horizontal
@@ -197,7 +197,7 @@ def input_name():
     tmp_input = wrapper.get_next_input()
     while (tmp_input == None):
       if (_shutdown == True):
-        exit(0)
+        process_shutdown() 
       if (wrapper.player_count() < 1):
         #player left in the middle
         return("XXX");
@@ -447,7 +447,7 @@ def play_game():
   while True:
     # start by checking for exit
     if (_shutdown == True):
-      exit(0)
+      process_shutdown() 
 
     dir_pressed = False
     current_time = datetime.now()
@@ -585,30 +585,15 @@ def shutdown_cb():
   print("Got the shutdown callback!!!")
   _shutdown = True 
 
+def process_shutdown():
+  exit(0)
+
 ####################################
 # Main loop
 ####################################
-''' I don't think we need this anymore...
-# wait for a controller to connexct.
-temp_image = Image.new("RGB", (total_columns, total_rows))
-temp_draw = ImageDraw.Draw(temp_image)
-temp_draw.text((0,0),"Waiting for controller", fill=(255,0,0), font = fntSM)
-matrix.SetImage(temp_image, 0, 0)
-'''
 
 wrapper = Gamepad_wrapper(1)
 wrapper.set_shutdown_cb(shutdown_cb)
-
-'''
-while wrapper.player_count() != 1:
-  # check for exit
-  if (_shutdown == True):
-    exit(0)
-
-  # briefly suspend our thread
-  time.sleep(0.001)
-'''
-
 
 while True:
   # start by making sure we have a gamepad connected
@@ -623,7 +608,7 @@ while True:
     while wrapper.player_count() < 1:
       # check for exit
       if (_shutdown == True):
-        exit(0)
+        process_shutdown() 
 
       # briefly suspend our thread
       time.sleep(0.001)
@@ -638,7 +623,7 @@ while True:
   #wrapper.blocking_read()
   while (wrapper.get_next_input() == None):
     if (_shutdown == True):
-      exit(0)
+      process_shutdown() 
 
   #blank the screen
   temp_image = Image.new("RGB", (total_columns, total_rows))

@@ -25,6 +25,11 @@ _shutdown_cb = default_shutdown_cb
 def process_shutdown():
   global _shutdown_cb
 
+  # send a shutdown to any attached devices
+  # note:  due to the timing, this MAY not make it out.  We'll
+  #   be publishing a last will also.
+  _client.publish("game_state", "exit");
+
   # call the shutdown callback
   _shutdown_cb()
 
@@ -117,6 +122,8 @@ class Gamepad_wrapper():
     self.brokername = read_broker()
  
     _client.on_message=on_message
+    _client.will_set("game_state", "exit")
+
     try:
       _client.connect(self.brokername)
     except:
