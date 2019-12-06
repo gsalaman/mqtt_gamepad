@@ -276,6 +276,8 @@ def play_game(num_players):
 
   while True:
 
+    check_for_shutdown()
+
     dir_pressed = False
     current_time = datetime.now()
     deltaT = current_time - last_update_time
@@ -648,6 +650,8 @@ def pregame():
     player.show_state()
 
   while (check_all_ready() == False):
+
+    check_for_shutdown()
     
     # update our connection state for each player.  Specifially:
     #   * If they were connected and now are disconnected, show disconnecxt.
@@ -803,14 +807,26 @@ class HighScoreData():
 def score_sort_helper(val):
   return (int(val[1]))
 
+def check_for_shutdown():
+  global _shutdown
+  if (_shutdown):
+    print("processing shutdown")
+    exit(0)
+
+def shutdown_cb():
+  global _shutdown
+  print("cycles_4p shutdown callback")
+  _shutdown = True
+
 ###################################
 # Main loop 
 ###################################
 
-
+_shutdown = False
 high_score_data = HighScoreData()
 
 wrapper = Gamepad_wrapper(4)
+wrapper.set_shutdown_cb(shutdown_cb)
 
 # First place gets 5 points, second 3, third and fourth 1.
 points_for_place = [5,3,1,1]
