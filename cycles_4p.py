@@ -122,11 +122,22 @@ def show_crash(crash_x, crash_y):
 def display_text(my_text, text_color, delay):
     global display_text_font
 
+
     temp_image = Image.new("RGB", (total_columns, total_rows))
     temp_draw = ImageDraw.Draw(temp_image)
     temp_draw.text((0,0),my_text, fill=text_color, font=display_text_font)
     matrix.SetImage(temp_image,0,0)
-    time.sleep(delay)
+  
+    start_time = datetime.now()
+    current_time = start_time
+    deltaT = current_time - start_time 
+
+    while (deltaT.total_seconds() < delay):
+      if (_shutdown == True):
+        exit(0)
+      current_time = datetime.now()
+      deltaT = current_time - start_time 
+      time.sleep(0.001)
 
 ###################################
 #  centered_text()
@@ -158,7 +169,17 @@ def centered_text(my_text, box_color, text_color, font, delay):
     text_draw.text((pixel_buffer,pixel_buffer),my_text, fill=text_color, font=font)
 
     matrix.SetImage(text_image,box_x,box_y)
-    time.sleep(delay)
+
+    start_time = datetime.now()
+    current_time = start_time
+    deltaT = current_time - start_time 
+
+    while (deltaT.total_seconds() < delay):
+      if (_shutdown == True):
+        exit(0)
+      current_time = datetime.now()
+      deltaT = current_time - start_time 
+      time.sleep(0.001)
 
 ########################################
 # apply_input
